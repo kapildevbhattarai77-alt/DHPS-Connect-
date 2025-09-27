@@ -6,6 +6,7 @@
     <title>DHPS Connect</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* Your existing CSS remains the same */
         /* CSS Reset and Base Styles */
         * {
             margin: 0;
@@ -1548,20 +1549,19 @@
     </div>
 
     <script>
-        // Application State
+        // Server Configuration
+        const SERVER_CONFIG = {
+            // JSONBin.io configuration - Free JSON storage service
+            baseUrl: 'https://api.jsonbin.io/v3/b',
+            binId: '67e7a9e3e41b4d34e4a7098b', // Replace with your actual bin ID
+            apiKey: '$2a$10$5L7pBq7v6q5Y5K5Y5K5Y5.' // Replace with your actual API key
+        };
+
+        // Application State (minimal - only session data)
         const state = {
             currentUser: null,
             isDarkMode: localStorage.getItem('darkMode') === 'true',
-            users: JSON.parse(localStorage.getItem('users')) || [],
             currentPage: 'splash',
-            generationReports: JSON.parse(localStorage.getItem('generationReports')) || [],
-            sliderImages: JSON.parse(localStorage.getItem('sliderImages')) || [
-                { url: 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80', slogan: 'Providing reliable energy for Nepal' },
-                { url: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80', slogan: 'Committed to sustainable power generation' },
-                { url: 'https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80', slogan: 'Our team works tirelessly to keep the lights on' },
-                { url: 'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80', slogan: 'Embracing new technologies for better efficiency' },
-                { url: 'https://images.unsplash.com/photo-1564059813745-5b2d0adc3266?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80', slogan: 'Serving the people of Nepal with pride' }
-            ],
             services: [
                 { name: 'Apple', icon: 'fas fa-apple-whole' },
                 { name: 'Bus', icon: 'fas fa-bus' },
@@ -1575,15 +1575,12 @@
                 { name: 'Jet', icon: 'fas fa-jet-fighter' },
                 { name: 'Key', icon: 'fas fa-key' },
                 { name: 'Leaf', icon: 'fas fa-leaf' }
-            ],
-            appSettings: JSON.parse(localStorage.getItem('appSettings')) || {
-                appTitle: 'DHPS Connect',
-                appLogo: null
-            }
+            ]
         };
 
         // DOM Elements
         const elements = {
+            // ... (same as before) ...
             // Pages
             splashScreen: document.getElementById('splashScreen'),
             loginPage: document.getElementById('loginPage'),
@@ -1699,6 +1696,73 @@
             newReportModalContent: document.getElementById('newReportModalContent')
         };
 
+        // Server API Functions
+        const api = {
+            async request(endpoint, method = 'GET', data = null) {
+                const url = `${SERVER_CONFIG.baseUrl}/${SERVER_CONFIG.binId}${endpoint}`;
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': SERVER_CONFIG.apiKey,
+                        'X-Bin-Meta': 'false'
+                    }
+                };
+
+                if (data) {
+                    options.body = JSON.stringify(data);
+                }
+
+                try {
+                    const response = await fetch(url, options);
+                    
+                    if (!response.ok) {
+                        throw new Error(`Server error: ${response.status}`);
+                    }
+                    
+                    return await response.json();
+                } catch (error) {
+                    console.error('API request failed:', error);
+                    throw error;
+                }
+            },
+
+            async getData() {
+                try {
+                    const data = await this.request('');
+                    return data || { users: [], generationReports: [], sliderImages: [], appSettings: {} };
+                } catch (error) {
+                    console.error('Failed to fetch data from server:', error);
+                    // Return default data structure if server is unavailable
+                    return {
+                        users: [],
+                        generationReports: [],
+                        sliderImages: [
+                            { url: 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80', slogan: 'Providing reliable energy for Nepal' },
+                            { url: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80', slogan: 'Committed to sustainable power generation' },
+                            { url: 'https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80', slogan: 'Our team works tirelessly to keep the lights on' }
+                        ],
+                        appSettings: {
+                            appTitle: 'DHPS Connect',
+                            appLogo: null,
+                            darkMode: false
+                        }
+                    };
+                }
+            },
+
+            async saveData(data) {
+                try {
+                    await this.request('', 'PUT', data);
+                    return true;
+                } catch (error) {
+                    console.error('Failed to save data to server:', error);
+                    showAlert('Failed to save data. Please check your connection.', 'info');
+                    return false;
+                }
+            }
+        };
+
         // Utility Functions
         function showAlert(message, type = 'info') {
             elements.alert.textContent = message;
@@ -1755,34 +1819,25 @@
             return { isValid: true };
         }
 
-        function saveToLocalStorage() {
-            localStorage.setItem('users', JSON.stringify(state.users));
-            localStorage.setItem('generationReports', JSON.stringify(state.generationReports));
-            localStorage.setItem('sliderImages', JSON.stringify(state.sliderImages));
-            localStorage.setItem('darkMode', state.isDarkMode.toString());
-            localStorage.setItem('appSettings', JSON.stringify(state.appSettings));
-        }
-
-        function updateAppLogoAndTitle() {
-            // Update splash screen
-            if (state.appSettings.appLogo) {
-                elements.appLogo.innerHTML = `<img src="${state.appSettings.appLogo}" alt="App Logo" style="width:100%;height:100%;border-radius:25%;object-fit:cover;">`;
+        function updateAppLogoAndTitle(settings) {
+            if (settings.appLogo) {
+                elements.appLogo.innerHTML = `<img src="${settings.appLogo}" alt="App Logo" style="width:100%;height:100%;border-radius:25%;object-fit:cover;">`;
             } else {
                 elements.appLogo.innerHTML = '<i class="fas fa-bolt"></i>';
             }
             
-            elements.appTitle.textContent = state.appSettings.appTitle;
+            elements.appTitle.textContent = settings.appTitle || 'DHPS Connect';
+            elements.headerTitle.textContent = settings.appTitle || 'DHPS Connect';
             
             // Update header logos
-            if (state.appSettings.appLogo) {
-                elements.headerLogo.innerHTML = `<img src="${state.appSettings.appLogo}" alt="App Logo" style="width:100%;height:100%;border-radius:25%;object-fit:cover;">`;
-                elements.adminHeaderLogo.innerHTML = `<img src="${state.appSettings.appLogo}" alt="App Logo" style="width:100%;height:100%;border-radius:25%;object-fit:cover;">`;
+            if (settings.appLogo) {
+                elements.headerLogo.innerHTML = `<img src="${settings.appLogo}" alt="App Logo" style="width:100%;height:100%;border-radius:25%;object-fit:cover;">`;
+                elements.adminHeaderLogo.innerHTML = `<img src="${settings.appLogo}" alt="App Logo" style="width:100%;height:100%;border-radius:25%;object-fit:cover;">`;
             } else {
                 elements.headerLogo.innerHTML = '<i class="fas fa-bolt"></i>';
                 elements.adminHeaderLogo.innerHTML = '<i class="fas fa-bolt"></i>';
             }
             
-            elements.headerTitle.textContent = state.appSettings.appTitle;
             elements.adminHeaderTitle.textContent = 'Super Admin Dashboard';
         }
 
@@ -1822,7 +1877,7 @@
         }
 
         // Application Initialization
-        function init() {
+        async function init() {
             // Set dark mode if enabled
             if (state.isDarkMode) {
                 document.body.classList.add('dark-mode');
@@ -1830,22 +1885,36 @@
                 elements.adminDarkModeToggle.classList.add('active');
             }
             
-            // Update app logo and title
-            updateAppLogoAndTitle();
-            
             // Show splash screen first with loading animation
             switchPage('splash');
             elements.loadingProgress.style.width = '100%';
+            
+            // Load data from server
+            try {
+                const serverData = await api.getData();
+                state.serverData = serverData;
+                
+                // Update app logo and title
+                updateAppLogoAndTitle(serverData.appSettings || {});
+            } catch (error) {
+                console.error('Failed to initialize app:', error);
+                state.serverData = {
+                    users: [],
+                    generationReports: [],
+                    sliderImages: [],
+                    appSettings: {}
+                };
+            }
             
             // After 5 seconds, show login page
             setTimeout(() => {
                 switchPage('login');
             }, 5000);
             
-            // Check if user is already logged in
-            const loggedInUser = localStorage.getItem('loggedInUser');
-            if (loggedInUser) {
-                state.currentUser = JSON.parse(loggedInUser);
+            // Check if user is already logged in (session only)
+            const sessionUser = sessionStorage.getItem('currentUser');
+            if (sessionUser) {
+                state.currentUser = JSON.parse(sessionUser);
                 if (state.currentUser.username === '1111111111' && state.currentUser.password === '98447278') {
                     switchPage('superAdmin');
                 } else {
@@ -1945,7 +2014,7 @@
             }
         }
 
-        function handleLogin() {
+        async function handleLogin() {
             const username = elements.username.value.trim();
             const password = elements.password.value.trim();
             
@@ -1966,7 +2035,7 @@
                     isAdmin: true,
                     profile: 'default'
                 };
-                localStorage.setItem('loggedInUser', JSON.stringify(state.currentUser));
+                sessionStorage.setItem('currentUser', JSON.stringify(state.currentUser));
                 
                 // Show welcome message
                 showAlert('Welcome, Super Admin!', 'success');
@@ -1977,7 +2046,7 @@
             }
             
             // Check for regular user login
-            const user = state.users.find(u => u.phone === username && u.password === password);
+            const user = state.serverData.users.find(u => u.phone === username && u.password === password);
             
             if (!user) {
                 showAlert('Wrong username or password.', 'info');
@@ -1990,7 +2059,7 @@
             }
             
             state.currentUser = user;
-            localStorage.setItem('loggedInUser', JSON.stringify(state.currentUser));
+            sessionStorage.setItem('currentUser', JSON.stringify(state.currentUser));
             
             // Show welcome message
             showAlert(`Hello ${user.name}! Welcome to DHPS Connect`, 'success');
@@ -2006,7 +2075,7 @@
         }
 
         // Signup Functions
-        function handleSignup() {
+        async function handleSignup() {
             const profile = elements.profilePreview.querySelector('img') ? elements.profilePreview.querySelector('img').src : 'default';
             const name = elements.signupName.value.trim();
             const email = elements.signupEmail.value.trim();
@@ -2031,7 +2100,7 @@
             }
             
             // Check if user already exists
-            if (state.users.find(u => u.phone === phone)) {
+            if (state.serverData.users.find(u => u.phone === phone)) {
                 showAlert('A user with this phone number already exists.', 'info');
                 return;
             }
@@ -2050,17 +2119,21 @@
                 blocked: false
             };
             
-            state.users.push(newUser);
-            saveToLocalStorage();
+            state.serverData.users.push(newUser);
             
-            showAlert('Registration successful! Your account is pending approval.', 'success');
-            setTimeout(() => {
-                switchPage('login');
-            }, 2000);
+            // Save to server
+            const success = await api.saveData(state.serverData);
+            
+            if (success) {
+                showAlert('Registration successful! Your account is pending approval.', 'success');
+                setTimeout(() => {
+                    switchPage('login');
+                }, 2000);
+            }
         }
 
         // Password Reset Functions
-        function handlePasswordReset() {
+        async function handlePasswordReset() {
             const username = elements.resetUsername.value.trim();
             const email = elements.resetEmail.value.trim();
             const newPassword = elements.newPassword.value;
@@ -2070,7 +2143,7 @@
                 return;
             }
             
-            const user = state.users.find(u => u.phone === username && u.email === email);
+            const user = state.serverData.users.find(u => u.phone === username && u.email === email);
             
             if (!user) {
                 showAlert('No user found with the provided information.', 'info');
@@ -2078,12 +2151,16 @@
             }
             
             user.password = newPassword;
-            saveToLocalStorage();
             
-            showAlert('Password reset successfully!', 'success');
-            setTimeout(() => {
-                switchPage('login');
-            }, 2000);
+            // Save to server
+            const success = await api.saveData(state.serverData);
+            
+            if (success) {
+                showAlert('Password reset successfully!', 'success');
+                setTimeout(() => {
+                    switchPage('login');
+                }, 2000);
+            }
         }
 
         // Main Page Functions
@@ -2115,7 +2192,7 @@
             elements.adminMenuOverlay.classList.toggle('active');
         }
 
-        function saveProfile() {
+        async function saveProfile() {
             const name = elements.profileName.value.trim();
             const email = elements.profileEmail.value.trim();
             const phone = elements.profilePhone.value.trim();
@@ -2133,20 +2210,23 @@
             state.currentUser.position = position;
             
             // Update in users array
-            const userIndex = state.users.findIndex(u => u.id === state.currentUser.id);
+            const userIndex = state.serverData.users.findIndex(u => u.id === state.currentUser.id);
             if (userIndex !== -1) {
-                state.users[userIndex] = state.currentUser;
+                state.serverData.users[userIndex] = state.currentUser;
             }
             
-            saveToLocalStorage();
-            localStorage.setItem('loggedInUser', JSON.stringify(state.currentUser));
+            // Save to server
+            const success = await api.saveData(state.serverData);
             
-            showAlert('Profile updated successfully!', 'success');
-            toggleProfileMenu();
-            loadMainPage(); // Refresh the page to show updated info
+            if (success) {
+                sessionStorage.setItem('currentUser', JSON.stringify(state.currentUser));
+                showAlert('Profile updated successfully!', 'success');
+                toggleProfileMenu();
+                loadMainPage(); // Refresh the page to show updated info
+            }
         }
 
-        function saveAdminProfile() {
+        async function saveAdminProfile() {
             const name = elements.adminProfileName.value.trim();
             const email = elements.adminProfileEmail.value.trim();
             const phone = elements.adminProfilePhone.value.trim();
@@ -2173,8 +2253,8 @@
                 state.currentUser.password = password;
             }
             
-            // Save to localStorage
-            localStorage.setItem('loggedInUser', JSON.stringify(state.currentUser));
+            // Save to session storage
+            sessionStorage.setItem('currentUser', JSON.stringify(state.currentUser));
             
             showAlert('Admin profile updated successfully!', 'success');
             toggleAdminProfileMenu();
@@ -2186,12 +2266,12 @@
             document.body.classList.toggle('dark-mode', state.isDarkMode);
             elements.darkModeToggle.classList.toggle('active', state.isDarkMode);
             elements.adminDarkModeToggle.classList.toggle('active', state.isDarkMode);
-            saveToLocalStorage();
+            localStorage.setItem('darkMode', state.isDarkMode.toString());
         }
 
         function handleLogout() {
             if (confirm('Are you sure you want to sign out?')) {
-                localStorage.removeItem('loggedInUser');
+                sessionStorage.removeItem('currentUser');
                 state.currentUser = null;
                 switchPage('login');
             }
@@ -2199,7 +2279,7 @@
 
         function handleAdminLogout() {
             if (confirm('Are you sure you want to sign out?')) {
-                localStorage.removeItem('loggedInUser');
+                sessionStorage.removeItem('currentUser');
                 state.currentUser = null;
                 switchPage('login');
             }
@@ -2226,7 +2306,7 @@
             elements.userSlider.innerHTML = '';
             
             // Only show approved users
-            const approvedUsers = state.users.filter(u => u.approved && !u.blocked);
+            const approvedUsers = state.serverData.users.filter(u => u.approved && !u.blocked);
             
             if (approvedUsers.length === 0) {
                 elements.userSlider.innerHTML = '<p style="text-align:center; padding:20px; color:#777;">No team members available.</p>';
@@ -2302,7 +2382,7 @@
             elements.reportList.innerHTML = '';
             
             // Show latest 10 reports
-            const recentReports = state.generationReports.slice(-10).reverse();
+            const recentReports = state.serverData.generationReports.slice(-10).reverse();
             
             if (recentReports.length === 0) {
                 elements.reportList.innerHTML = '<p style="text-align:center; padding:20px; color:#777;">No generation reports available.</p>';
@@ -2364,15 +2444,15 @@
             });
         }
 
-        function viewAllReports() {
+        async function viewAllReports() {
             elements.reportModalTitle.textContent = 'All Generation Reports';
             elements.reportModalContent.innerHTML = '';
             
-            if (state.generationReports.length === 0) {
+            if (state.serverData.generationReports.length === 0) {
                 elements.reportModalContent.innerHTML = '<p style="text-align:center; padding:20px; color:#777;">No generation reports available.</p>';
             } else {
                 // Show up to 60 reports
-                const reportsToShow = state.generationReports.slice(-60).reverse();
+                const reportsToShow = state.serverData.generationReports.slice(-60).reverse();
                 
                 reportsToShow.forEach(report => {
                     // Check if current user can edit/delete this report
@@ -2563,7 +2643,7 @@
             eventsContainer.appendChild(eventDiv);
         };
 
-        function generateNewReport() {
+        async function generateNewReport() {
             const date = document.getElementById('reportDate').value;
             const unit1 = parseFloat(document.getElementById('unit1').value) || 0;
             const unit2 = parseFloat(document.getElementById('unit2').value) || 0;
@@ -2628,16 +2708,20 @@
                 }
             };
             
-            state.generationReports.push(newReport);
-            saveToLocalStorage();
+            state.serverData.generationReports.push(newReport);
             
-            showAlert('Report generated successfully!', 'success');
-            elements.newReportModal.classList.remove('active');
-            loadGenerationReports(); // Refresh the reports list
+            // Save to server
+            const success = await api.saveData(state.serverData);
+            
+            if (success) {
+                showAlert('Report generated successfully!', 'success');
+                elements.newReportModal.classList.remove('active');
+                loadGenerationReports(); // Refresh the reports list
+            }
         }
 
-        function editReport(reportId) {
-            const report = state.generationReports.find(r => r.id == reportId);
+        async function editReport(reportId) {
+            const report = state.serverData.generationReports.find(r => r.id == reportId);
             if (!report) return;
             
             elements.newReportModalTitle.textContent = 'Edit Generation Report';
@@ -2707,8 +2791,8 @@
             elements.newReportModal.classList.add('active');
         }
 
-        function updateReport(reportId) {
-            const reportIndex = state.generationReports.findIndex(r => r.id == reportId);
+        async function updateReport(reportId) {
+            const reportIndex = state.serverData.generationReports.findIndex(r => r.id == reportId);
             if (reportIndex === -1) return;
             
             const date = document.getElementById('editReportDate').value;
@@ -2728,8 +2812,8 @@
             const generationPercentage = genAtTPH > 0 ? (total / genAtTPH) * 100 : 0;
             
             // Update report
-            state.generationReports[reportIndex].title = `Daily Generation Report ${date} by ${state.currentUser.name}`;
-            state.generationReports[reportIndex].data = {
+            state.serverData.generationReports[reportIndex].title = `Daily Generation Report ${date} by ${state.currentUser.name}`;
+            state.serverData.generationReports[reportIndex].data = {
                 date,
                 unit1, unit2, unit3,
                 total,
@@ -2739,23 +2823,26 @@
                 tdFeeder,
                 genAtTPH,
                 generationPercentage,
-                idealHour1: state.generationReports[reportIndex].data.idealHour1,
-                idealHour2: state.generationReports[reportIndex].data.idealHour2,
-                idealHour3: state.generationReports[reportIndex].data.idealHour3,
-                totalIdealHour: state.generationReports[reportIndex].data.totalIdealHour,
-                totalRunHour: state.generationReports[reportIndex].data.totalRunHour,
+                idealHour1: state.serverData.generationReports[reportIndex].data.idealHour1,
+                idealHour2: state.serverData.generationReports[reportIndex].data.idealHour2,
+                idealHour3: state.serverData.generationReports[reportIndex].data.idealHour3,
+                totalIdealHour: state.serverData.generationReports[reportIndex].data.totalIdealHour,
+                totalRunHour: state.serverData.generationReports[reportIndex].data.totalRunHour,
                 stationConsumption
             };
             
-            saveToLocalStorage();
+            // Save to server
+            const success = await api.saveData(state.serverData);
             
-            showAlert('Report updated successfully!', 'success');
-            elements.newReportModal.classList.remove('active');
-            loadGenerationReports(); // Refresh the reports list
+            if (success) {
+                showAlert('Report updated successfully!', 'success');
+                elements.newReportModal.classList.remove('active');
+                loadGenerationReports(); // Refresh the reports list
+            }
         }
 
         function previewReport(reportId) {
-            const report = state.generationReports.find(r => r.id == reportId);
+            const report = state.serverData.generationReports.find(r => r.id == reportId);
             if (!report) {
                 showAlert('Report not found!', 'info');
                 return;
@@ -2827,7 +2914,7 @@
         }
 
         function downloadReport(reportId) {
-            const report = state.generationReports.find(r => r.id == reportId);
+            const report = state.serverData.generationReports.find(r => r.id == reportId);
             if (!report) return;
             
             // In a real application, this would generate an actual PDF
@@ -2835,17 +2922,22 @@
             showAlert(`Downloading report: ${report.title}`, 'success');
         }
 
-        function deleteReport(reportId) {
-            state.generationReports = state.generationReports.filter(r => r.id != reportId);
-            saveToLocalStorage();
-            loadGenerationReports(); // Refresh the list
-            showAlert('Report deleted successfully!', 'success');
+        async function deleteReport(reportId) {
+            state.serverData.generationReports = state.serverData.generationReports.filter(r => r.id != reportId);
+            
+            // Save to server
+            const success = await api.saveData(state.serverData);
+            
+            if (success) {
+                loadGenerationReports(); // Refresh the list
+                showAlert('Report deleted successfully!', 'success');
+            }
         }
 
         function loadPhotoSlider() {
             elements.sliderContainer.innerHTML = '';
             
-            state.sliderImages.forEach((image, index) => {
+            state.serverData.sliderImages.forEach((image, index) => {
                 const slide = document.createElement('div');
                 slide.className = 'slide';
                 slide.style.backgroundImage = `url(${image.url})`;
@@ -2864,7 +2956,7 @@
             // Auto-slide functionality
             let currentSlide = 0;
             setInterval(() => {
-                currentSlide = (currentSlide + 1) % state.sliderImages.length;
+                currentSlide = (currentSlide + 1) % state.serverData.sliderImages.length;
                 elements.sliderContainer.style.transform = `translateX(-${currentSlide * 20}%)`;
             }, 5000);
         }
@@ -2872,18 +2964,18 @@
         // Super Admin Functions
         function loadSuperAdminPage() {
             // Update counts
-            elements.totalUsersCount.textContent = state.users.length;
-            elements.approvalRequestsCount.textContent = state.users.filter(u => !u.approved).length;
-            elements.blockedAccountsCount.textContent = state.users.filter(u => u.blocked).length;
-            elements.generationReportsCount.textContent = state.generationReports.length;
+            elements.totalUsersCount.textContent = state.serverData.users.length;
+            elements.approvalRequestsCount.textContent = state.serverData.users.filter(u => !u.approved).length;
+            elements.blockedAccountsCount.textContent = state.serverData.users.filter(u => u.blocked).length;
+            elements.generationReportsCount.textContent = state.serverData.generationReports.length;
         }
 
         function showTotalUsers() {
             elements.reportModalTitle.textContent = 'Total Connected Users';
             elements.reportModalContent.innerHTML = `
-                <p><strong>Total Users:</strong> ${state.users.length}</p>
+                <p><strong>Total Users:</strong> ${state.serverData.users.length}</p>
                 <div style="max-height: 400px; overflow-y: auto;">
-                    ${state.users.map(user => `
+                    ${state.serverData.users.map(user => `
                         <div class="report-item" style="margin-bottom: 10px;">
                             <div class="report-info">
                                 <h3>${user.name}</h3>
@@ -2930,7 +3022,7 @@
         }
 
         function showApprovalRequests() {
-            const pendingUsers = state.users.filter(u => !u.approved);
+            const pendingUsers = state.serverData.users.filter(u => !u.approved);
             
             elements.reportModalTitle.textContent = 'Approval Requests';
             elements.reportModalContent.innerHTML = `
@@ -2982,7 +3074,7 @@
         }
 
         function showBlockedAccounts() {
-            const blockedUsers = state.users.filter(u => u.blocked);
+            const blockedUsers = state.serverData.users.filter(u => u.blocked);
             
             elements.reportModalTitle.textContent = 'Blocked Accounts';
             elements.reportModalContent.innerHTML = `
@@ -3028,11 +3120,11 @@
             elements.reportModalTitle.textContent = 'All Generation Reports (Admin)';
             elements.reportModalContent.innerHTML = '';
             
-            if (state.generationReports.length === 0) {
+            if (state.serverData.generationReports.length === 0) {
                 elements.reportModalContent.innerHTML = '<p style="text-align:center; padding:20px; color:#777;">No generation reports available.</p>';
             } else {
                 // Show all reports
-                const reportsToShow = state.generationReports.slice().reverse();
+                const reportsToShow = state.serverData.generationReports.slice().reverse();
                 
                 reportsToShow.forEach(report => {
                     const reportElement = document.createElement('div');
@@ -3095,17 +3187,17 @@
             elements.reportModalContent.innerHTML = `
                 <div class="form-group">
                     <label for="websiteName">Website Name</label>
-                    <input type="text" id="websiteName" value="${state.appSettings.appTitle}">
+                    <input type="text" id="websiteName" value="${state.serverData.appSettings.appTitle || 'DHPS Connect'}">
                 </div>
                 
                 <div class="form-group">
                     <label for="websiteLogo">Website Logo URL</label>
-                    <input type="text" id="websiteLogo" value="${state.appSettings.appLogo || ''}" placeholder="Enter logo URL">
+                    <input type="text" id="websiteLogo" value="${state.serverData.appSettings.appLogo || ''}" placeholder="Enter logo URL">
                 </div>
                 
                 <h4>Slider Images</h4>
                 <div id="sliderImagesList">
-                    ${state.sliderImages.map((image, index) => `
+                    ${state.serverData.sliderImages.map((image, index) => `
                         <div class="form-group" style="border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; border-radius: 5px;">
                             <label>Image ${index + 1}</label>
                             <input type="text" class="slider-image-url" value="${image.url}" placeholder="Image URL" data-index="${index}">
@@ -3121,14 +3213,14 @@
             
             // Add event listeners
             document.getElementById('addSliderImage').addEventListener('click', () => {
-                state.sliderImages.push({ url: '', slogan: '' });
+                state.serverData.sliderImages.push({ url: '', slogan: '' });
                 showWebpageControl(); // Refresh the form
             });
             
             document.querySelectorAll('.remove-slider-image').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const index = e.target.getAttribute('data-index');
-                    state.sliderImages.splice(index, 1);
+                    state.serverData.sliderImages.splice(index, 1);
                     showWebpageControl(); // Refresh the form
                 });
             });
@@ -3138,15 +3230,40 @@
             elements.reportModal.classList.add('active');
         }
 
-        function saveWebpageSettings() {
-            // In a real application, this would save the settings
-            // For this demo, we'll just show a success message
-            showAlert('Webpage settings saved successfully!', 'success');
-            elements.reportModal.classList.remove('active');
+        async function saveWebpageSettings() {
+            const websiteName = document.getElementById('websiteName').value;
+            const websiteLogo = document.getElementById('websiteLogo').value;
+            
+            // Update app settings
+            state.serverData.appSettings = {
+                appTitle: websiteName,
+                appLogo: websiteLogo,
+                darkMode: state.isDarkMode
+            };
+            
+            // Update slider images
+            document.querySelectorAll('.slider-image-url').forEach(input => {
+                const index = input.getAttribute('data-index');
+                state.serverData.sliderImages[index].url = input.value;
+            });
+            
+            document.querySelectorAll('.slider-image-slogan').forEach(input => {
+                const index = input.getAttribute('data-index');
+                state.serverData.sliderImages[index].slogan = input.value;
+            });
+            
+            // Save to server
+            const success = await api.saveData(state.serverData);
+            
+            if (success) {
+                updateAppLogoAndTitle(state.serverData.appSettings);
+                showAlert('Webpage settings saved successfully!', 'success');
+                elements.reportModal.classList.remove('active');
+            }
         }
 
-        function editUser(userId) {
-            const user = state.users.find(u => u.id == userId);
+        async function editUser(userId) {
+            const user = state.serverData.users.find(u => u.id == userId);
             if (!user) return;
             
             elements.reportModalTitle.textContent = `Edit User: ${user.name}`;
@@ -3186,7 +3303,7 @@
                 <button class="btn" id="saveUserChanges">Save Changes</button>
             `;
             
-            document.getElementById('saveUserChanges').addEventListener('click', () => {
+            document.getElementById('saveUserChanges').addEventListener('click', async () => {
                 user.name = document.getElementById('editUserName').value;
                 user.email = document.getElementById('editUserEmail').value;
                 user.phone = document.getElementById('editUserPhone').value;
@@ -3199,40 +3316,57 @@
                     user.password = newPassword;
                 }
                 
-                saveToLocalStorage();
-                showAlert('User updated successfully!', 'success');
-                elements.reportModal.classList.remove('active');
+                // Save to server
+                const success = await api.saveData(state.serverData);
+                
+                if (success) {
+                    showAlert('User updated successfully!', 'success');
+                    elements.reportModal.classList.remove('active');
+                }
             });
         }
 
-        function approveUser(userId, approve) {
-            const user = state.users.find(u => u.id == userId);
+        async function approveUser(userId, approve) {
+            const user = state.serverData.users.find(u => u.id == userId);
             if (!user) return;
             
             user.approved = approve;
-            saveToLocalStorage();
             
-            showAlert(`User ${approve ? 'approved' : 'disapproved'} successfully!`, 'success');
+            // Save to server
+            const success = await api.saveData(state.serverData);
+            
+            if (success) {
+                showAlert(`User ${approve ? 'approved' : 'disapproved'} successfully!`, 'success');
+            }
         }
 
-        function toggleUserBlock(userId) {
-            const user = state.users.find(u => u.id == userId);
+        async function toggleUserBlock(userId) {
+            const user = state.serverData.users.find(u => u.id == userId);
             if (!user) return;
             
             user.blocked = !user.blocked;
-            saveToLocalStorage();
             
-            showAlert(`User ${user.blocked ? 'blocked' : 'unblocked'} successfully!`, 'success');
+            // Save to server
+            const success = await api.saveData(state.serverData);
+            
+            if (success) {
+                showAlert(`User ${user.blocked ? 'blocked' : 'unblocked'} successfully!`, 'success');
+            }
         }
 
-        function deleteUser(userId) {
-            state.users = state.users.filter(u => u.id != userId);
-            saveToLocalStorage();
-            showAlert('User deleted successfully!', 'success');
+        async function deleteUser(userId) {
+            state.serverData.users = state.serverData.users.filter(u => u.id != userId);
+            
+            // Save to server
+            const success = await api.saveData(state.serverData);
+            
+            if (success) {
+                showAlert('User deleted successfully!', 'success');
+            }
         }
 
         function previewUser(userId) {
-            const user = state.users.find(u => u.id == userId);
+            const user = state.serverData.users.find(u => u.id == userId);
             if (!user) return;
             
             showUserDetails(user);
