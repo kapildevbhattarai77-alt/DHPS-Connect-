@@ -1,0 +1,3257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DHPS Connect</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* CSS Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --nea-blue: #0056b3;
+            --nea-blue-dark: #003d82;
+            --nea-blue-light: #4d8bdf;
+            --light-bg: #f5f7fa;
+            --dark-bg: #1a1a2e;
+            --dark-card: #16213e;
+            --text-light: #333;
+            --text-dark: #f0f0f0;
+            --card-bg: #ffffff;
+            --shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            --shadow-heavy: 0 8px 30px rgba(0, 0, 0, 0.15);
+            --transition: all 0.3s ease;
+            --gradient: linear-gradient(135deg, var(--nea-blue) 0%, var(--nea-blue-dark) 100%);
+            --radius: 12px;
+            --safe-area-top: env(safe-area-inset-top);
+            --safe-area-bottom: env(safe-area-inset-bottom);
+        }
+
+        body {
+            background-color: var(--light-bg);
+            color: var(--text-light);
+            transition: var(--transition);
+            line-height: 1.6;
+            padding-top: var(--safe-area-top);
+            padding-bottom: var(--safe-area-bottom);
+        }
+
+        body.dark-mode {
+            background-color: var(--dark-bg);
+            color: var(--text-dark);
+        }
+
+        .container {
+            width: 100%;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Splash Screen Styles - Enhanced for Mobile */
+        .splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--gradient);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            color: white;
+            text-align: center;
+            transition: opacity 0.5s ease;
+            padding: 20px;
+        }
+
+        .splash-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .splash-logo {
+            width: 120px;
+            height: 120px;
+            background-color: white;
+            border-radius: 25%;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 50px;
+            color: var(--nea-blue);
+            box-shadow: var(--shadow-heavy);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .splash-screen h1 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            font-weight: 700;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .splash-screen p {
+            font-size: 1.2rem;
+            font-style: italic;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+
+        /* Loading Bar */
+        .loading-bar {
+            width: 80%;
+            max-width: 300px;
+            height: 6px;
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        .loading-progress {
+            height: 100%;
+            background-color: white;
+            width: 0%;
+            border-radius: 3px;
+            transition: width 5s linear;
+        }
+
+        /* Login Page Styles - Mobile Optimized */
+        .login-page, .signup-page, .forgot-password-page {
+            display: none;
+            width: 100%;
+            min-height: 100vh;
+            background: var(--gradient);
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .login-page.active, .signup-page.active, .forgot-password-page.active {
+            display: flex;
+        }
+
+        .login-form, .signup-form, .forgot-password-form {
+            background-color: white;
+            padding: 30px 25px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-heavy);
+            width: 100%;
+            max-width: 450px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        body.dark-mode .login-form, 
+        body.dark-mode .signup-form, 
+        body.dark-mode .forgot-password-form {
+            background-color: var(--dark-card);
+        }
+
+        .form-title {
+            text-align: center;
+            margin-bottom: 25px;
+            color: var(--nea-blue);
+            font-size: 1.8rem;
+            font-weight: 600;
+            position: relative;
+            padding-bottom: 15px;
+        }
+
+        .form-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 4px;
+            background: var(--gradient);
+            border-radius: 2px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-light);
+            font-size: 0.95rem;
+        }
+
+        body.dark-mode .form-group label {
+            color: var(--text-dark);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: var(--transition);
+            background-color: #f9f9f9;
+            -webkit-appearance: none;
+        }
+
+        body.dark-mode .form-group input {
+            background-color: #2a2a3e;
+            border-color: #444;
+            color: var(--text-dark);
+        }
+
+        .form-group input:focus {
+            border-color: var(--nea-blue);
+            box-shadow: 0 0 0 3px rgba(0, 86, 179, 0.1);
+            outline: none;
+        }
+
+        .form-group i {
+            position: absolute;
+            right: 15px;
+            top: 42px;
+            cursor: pointer;
+            color: #777;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background: var(--gradient);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 4px 10px rgba(0, 86, 179, 0.3);
+            -webkit-tap-highlight-color: rgba(0,0,0,0.1);
+        }
+
+        .btn:hover, .btn:active {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 86, 179, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            box-shadow: 0 4px 10px rgba(108, 117, 125, 0.3);
+        }
+
+        .btn-secondary:hover, .btn-secondary:active {
+            box-shadow: 0 6px 15px rgba(108, 117, 125, 0.4);
+        }
+
+        .form-footer {
+            text-align: center;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        body.dark-mode .form-footer {
+            border-top-color: #444;
+        }
+
+        .form-footer a {
+            color: var(--nea-blue);
+            text-decoration: none;
+            margin: 0 10px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+            display: inline-block;
+            padding: 8px 0;
+        }
+
+        .form-footer a:hover {
+            text-decoration: underline;
+            color: var(--nea-blue-dark);
+        }
+
+        /* Profile Picture Upload - Mobile Optimized */
+        .profile-upload {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-direction: column;
+        }
+
+        .profile-preview {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background-color: #f0f0f0;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            border: 3px solid #ddd;
+        }
+
+        body.dark-mode .profile-preview {
+            background-color: #2a2a3e;
+            border-color: #444;
+        }
+
+        .profile-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-preview i {
+            font-size: 40px;
+            color: #999;
+        }
+
+        .upload-btn {
+            background: #f0f0f0;
+            border: 1px dashed #ccc;
+            padding: 12px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+            width: 100%;
+        }
+
+        body.dark-mode .upload-btn {
+            background: #2a2a3e;
+            border-color: #444;
+            color: var(--text-dark);
+        }
+
+        .upload-btn:hover, .upload-btn:active {
+            background: #e0e0e0;
+        }
+
+        body.dark-mode .upload-btn:hover, body.dark-mode .upload-btn:active {
+            background: #333347;
+        }
+
+        /* Main Page Styles - Mobile Optimized */
+        .main-page {
+            display: none;
+            width: 100%;
+            min-height: 100vh;
+        }
+
+        .main-page.active {
+            display: block;
+        }
+
+        /* Header Styles - Mobile Optimized */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: var(--gradient);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            box-shadow: var(--shadow);
+            height: 70px;
+            padding-top: calc(15px + var(--safe-area-top));
+        }
+
+        .header-logo {
+            display: flex;
+            align-items: center;
+        }
+
+        .header-logo img {
+            width: 40px;
+            height: 40px;
+            margin-right: 12px;
+            border-radius: 8px;
+        }
+
+        .header-logo h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+
+        .profile-section {
+            position: relative;
+        }
+
+        .profile-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background-color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--nea-blue);
+            cursor: pointer;
+            font-size: 1.3rem;
+            border: 2px solid rgba(255,255,255,0.5);
+            transition: var(--transition);
+            -webkit-tap-highlight-color: rgba(0,0,0,0.1);
+        }
+
+        .profile-icon:hover, .profile-icon:active {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.3);
+        }
+
+        .profile-menu {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 85%;
+            max-width: 320px;
+            height: 100%;
+            background-color: white;
+            box-shadow: var(--shadow-heavy);
+            z-index: 101;
+            padding: 20px;
+            transition: right 0.3s ease;
+            overflow-y: auto;
+            padding-top: calc(20px + var(--safe-area-top));
+        }
+
+        body.dark-mode .profile-menu {
+            background-color: var(--dark-card);
+            color: var(--text-dark);
+        }
+
+        .profile-menu.active {
+            right: 0;
+        }
+
+        .profile-menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        body.dark-mode .profile-menu-header {
+            border-bottom: 1px solid #444;
+        }
+
+        .close-menu {
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: #777;
+            -webkit-tap-highlight-color: rgba(0,0,0,0.1);
+        }
+
+        .dark-mode-toggle {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 20px 0;
+            padding: 10px 0;
+            border-top: 1px solid #eee;
+            border-bottom: 1px solid #eee;
+        }
+
+        body.dark-mode .dark-mode-toggle {
+            border-color: #444;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+            background-color: #ccc;
+            border-radius: 13px;
+            cursor: pointer;
+            transition: var(--transition);
+            -webkit-tap-highlight-color: rgba(0,0,0,0.1);
+        }
+
+        .toggle-switch.active {
+            background-color: var(--nea-blue);
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: white;
+            border-radius: 50%;
+            top: 3px;
+            left: 3px;
+            transition: var(--transition);
+        }
+
+        .toggle-switch.active::after {
+            left: 27px;
+        }
+
+        /* Content Area - Mobile Optimized */
+        .content {
+            margin-top: 85px;
+            padding: 20px 15px 80px;
+            min-height: calc(100vh - 165px);
+        }
+
+        /* User Slider - Mobile Optimized */
+        .user-slider-section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+            color: var(--nea-blue);
+            font-weight: 600;
+            position: relative;
+            padding-bottom: 8px;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: var(--gradient);
+            border-radius: 2px;
+        }
+
+        body.dark-mode .section-title {
+            color: #7aa7e6;
+        }
+
+        .user-slider {
+            display: flex;
+            overflow-x: auto;
+            padding: 10px 5px;
+            gap: 15px;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .user-slider::-webkit-scrollbar {
+            display: none;
+        }
+
+        .user-card {
+            min-width: 150px;
+            background-color: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 15px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: var(--transition);
+            flex-shrink: 0;
+            -webkit-tap-highlight-color: rgba(0,0,0,0.1);
+        }
+
+        body.dark-mode .user-card {
+            background-color: var(--dark-card);
+        }
+
+        .user-card:hover, .user-card:active {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-heavy);
+        }
+
+        .user-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: #f0f0f0;
+            margin: 0 auto 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            color: #777;
+            overflow: hidden;
+            border: 3px solid #e0e0e0;
+        }
+
+        body.dark-mode .user-avatar {
+            background-color: #2a2a3e;
+            border-color: #444;
+        }
+
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .user-card h3 {
+            font-size: 1rem;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .user-card p {
+            font-size: 0.85rem;
+            color: #777;
+        }
+
+        body.dark-mode .user-card p {
+            color: #bbb;
+        }
+
+        /* Services Grid - Mobile Optimized */
+        .services-section {
+            margin-bottom: 30px;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        @media (min-width: 480px) {
+            .services-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (min-width: 768px) {
+            .services-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .service-card {
+            background-color: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 20px 10px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 120px;
+            -webkit-tap-highlight-color: rgba(0,0,0,0.1);
+        }
+
+        body.dark-mode .service-card {
+            background-color: var(--dark-card);
+        }
+
+        .service-card:hover, .service-card:active {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-heavy);
+        }
+
+        .service-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: var(--nea-blue);
+            transition: var(--transition);
+        }
+
+        body.dark-mode .service-icon {
+            color: #7aa7e6;
+        }
+
+        .service-card:hover .service-icon, .service-card:active .service-icon {
+            transform: scale(1.1);
+        }
+
+        .service-card h3 {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        /* Generation Report - Mobile Optimized */
+        .generation-report-section {
+            margin-bottom: 30px;
+        }
+
+        .report-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-direction: column;
+        }
+
+        @media (min-width: 480px) {
+            .report-actions {
+                flex-direction: row;
+            }
+        }
+
+        .report-actions .btn {
+            width: 100%;
+        }
+
+        @media (min-width: 480px) {
+            .report-actions .btn {
+                width: auto;
+                flex: 1;
+            }
+        }
+
+        .report-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .report-item {
+            background-color: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 15px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            transition: var(--transition);
+        }
+
+        @media (min-width: 768px) {
+            .report-item {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+        }
+
+        body.dark-mode .report-item {
+            background-color: var(--dark-card);
+        }
+
+        .report-item:hover {
+            box-shadow: var(--shadow-heavy);
+        }
+
+        .report-info h3 {
+            font-size: 1rem;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .report-info p {
+            font-size: 0.85rem;
+            color: #777;
+        }
+
+        body.dark-mode .report-info p {
+            color: #bbb;
+        }
+
+        .report-actions-item {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .action-btn {
+            padding: 8px 12px;
+            background-color: #f0f0f0;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.85rem;
+            font-weight: 500;
+            -webkit-tap-highlight-color: rgba(0,0,0,0.1);
+        }
+
+        body.dark-mode .action-btn {
+            background-color: #333;
+            color: var(--text-dark);
+        }
+
+        .action-btn:hover, .action-btn:active {
+            background-color: #e0e0e0;
+            transform: translateY(-2px);
+        }
+
+        body.dark-mode .action-btn:hover, body.dark-mode .action-btn:active {
+            background-color: #444;
+        }
+
+        .action-btn.primary {
+            background-color: var(--nea-blue);
+            color: white;
+        }
+
+        .action-btn.primary:hover, .action-btn.primary:active {
+            background-color: var(--nea-blue-dark);
+        }
+
+        /* Photo Slider - Mobile Optimized */
+        .photo-slider-section {
+            margin-bottom: 30px;
+        }
+
+        .photo-slider {
+            position: relative;
+            height: 200px;
+            overflow: hidden;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .slider-container {
+            display: flex;
+            width: 500%;
+            height: 100%;
+            transition: transform 0.8s ease;
+        }
+
+        .slide {
+            width: 20%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: flex-end;
+            padding: 20px;
+            color: white;
+            position: relative;
+        }
+
+        .slide::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+        }
+
+        .slide-content {
+            position: relative;
+            z-index: 1;
+            max-width: 90%;
+        }
+
+        .slide-content p {
+            font-size: 1rem;
+            line-height: 1.4;
+        }
+
+        /* Footer - Mobile Optimized */
+        .footer {
+            background: var(--gradient);
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            position: relative;
+            width: 100%;
+        }
+
+        .footer p {
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        /* Modal Styles - Mobile Optimized */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: var(--radius);
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: var(--shadow-heavy);
+            animation: modalFadeIn 0.3s ease;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        body.dark-mode .modal-content {
+            background-color: var(--dark-card);
+            color: var(--text-dark);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            background: var(--gradient);
+            color: white;
+            border-radius: var(--radius) var(--radius) 0 0;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        body.dark-mode .modal-header {
+            border-bottom: 1px solid #444;
+        }
+
+        .modal-close {
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: white;
+            transition: var(--transition);
+            -webkit-tap-highlight-color: rgba(0,0,0,0.1);
+        }
+
+        .modal-close:hover, .modal-close:active {
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        /* Super Admin Styles - Mobile Optimized */
+        .super-admin-page {
+            display: none;
+            width: 100%;
+            min-height: 100vh;
+            background-color: var(--light-bg);
+            padding-top: calc(70px + var(--safe-area-top));
+        }
+
+        body.dark-mode .super-admin-page {
+            background-color: var(--dark-bg);
+        }
+
+        .super-admin-page.active {
+            display: block;
+        }
+
+        .admin-dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        @media (max-width: 480px) {
+            .admin-dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .admin-card {
+            background-color: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            height: 150px;
+            justify-content: space-between;
+            -webkit-tap-highlight-color: rgba(0,0,0,0.1);
+        }
+
+        body.dark-mode .admin-card {
+            background-color: var(--dark-card);
+        }
+
+        .admin-card:hover, .admin-card:active {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-heavy);
+        }
+
+        .admin-card h3 {
+            margin-bottom: 10px;
+            color: var(--nea-blue);
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        body.dark-mode .admin-card h3 {
+            color: #7aa7e6;
+        }
+
+        .admin-card p {
+            font-size: 1rem;
+            margin-bottom: 10px;
+            color: #000; /* Fix for light mode text color */
+        }
+
+        body.dark-mode .admin-card p {
+            color: #bbb;
+        }
+
+        .admin-card .count {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--nea-blue);
+            text-align: right;
+        }
+
+        body.dark-mode .admin-card .count {
+            color: #7aa7e6;
+        }
+
+        /* Alert Styles - Mobile Optimized */
+        .alert {
+            position: fixed;
+            top: 90px;
+            right: 15px;
+            left: 15px;
+            padding: 12px 15px;
+            background-color: #f44336;
+            color: white;
+            border-radius: 8px;
+            box-shadow: var(--shadow-heavy);
+            z-index: 300;
+            display: none;
+            animation: slideIn 0.3s ease;
+            max-width: 100%;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .alert.success {
+            background-color: #4CAF50;
+        }
+
+        .alert.info {
+            background-color: #2196F3;
+        }
+
+        /* Iframe Styles - Mobile Optimized */
+        .iframe-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: white;
+            z-index: 400;
+            display: none;
+        }
+
+        .iframe-container.active {
+            display: block;
+        }
+
+        .iframe-header {
+            background: var(--gradient);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 70px;
+            padding-top: calc(15px + var(--safe-area-top));
+        }
+
+        .iframe-content {
+            width: 100%;
+            height: calc(100% - 70px);
+        }
+
+        .iframe-content iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* Mobile Menu Overlay */
+        .menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 99;
+            display: none;
+        }
+
+        .menu-overlay.active {
+            display: block;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .services-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .report-actions {
+                flex-direction: column;
+            }
+            
+            .modal-content {
+                width: 95%;
+            }
+            
+            .splash-logo {
+                width: 100px;
+                height: 100px;
+                font-size: 40px;
+            }
+            
+            .splash-screen h1 {
+                font-size: 2rem;
+            }
+            
+            .splash-screen p {
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .services-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .login-form, .signup-form, .forgot-password-form {
+                padding: 20px 15px;
+            }
+            
+            .content {
+                padding: 20px 10px 70px;
+            }
+            
+            .header-logo h1 {
+                font-size: 1.2rem;
+            }
+            
+            .section-title {
+                font-size: 1.3rem;
+            }
+            
+            .user-card {
+                min-width: 130px;
+                padding: 12px;
+            }
+            
+            .user-avatar {
+                width: 50px;
+                height: 50px;
+                font-size: 1.2rem;
+            }
+            
+            .service-card {
+                height: 100px;
+                padding: 15px 5px;
+            }
+            
+            .service-icon {
+                font-size: 1.8rem;
+                margin-bottom: 8px;
+            }
+            
+            .service-card h3 {
+                font-size: 0.85rem;
+            }
+        }
+
+        /* Swipe support for mobile */
+        .swipe-area {
+            touch-action: pan-y;
+        }
+    </style>
+</head>
+<body>
+    <!-- Splash Screen -->
+    <div class="splash-screen" id="splashScreen">
+        <div class="splash-logo" id="appLogo">
+            <i class="fas fa-bolt"></i>
+        </div>
+        <h1 id="appTitle">DHPS Connect</h1>
+        <p>उज्यालो नेपालको संवाहक</p>
+        <div class="loading-bar">
+            <div class="loading-progress" id="loadingProgress"></div>
+        </div>
+    </div>
+
+    <!-- Login Page -->
+    <div class="login-page" id="loginPage">
+        <div class="login-form">
+            <h2 class="form-title">Login</h2>
+            <div class="form-group">
+                <label for="username">Phone Number (Username)</label>
+                <input type="text" id="username" placeholder="Enter your phone number">
+                <i class="fas fa-phone"></i>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Enter your password">
+                <i class="fas fa-eye" id="togglePassword"></i>
+            </div>
+            <button class="btn" id="loginBtn">Login</button>
+            <div class="form-footer">
+                <a id="forgotPasswordLink">Forgot Password?</a>
+                <a id="signupLink">Sign Up</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sign Up Page -->
+    <div class="signup-page" id="signupPage">
+        <div class="signup-form">
+            <h2 class="form-title">Sign Up</h2>
+            
+            <div class="profile-upload">
+                <div class="profile-preview" id="profilePreview">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="upload-btn" id="uploadTrigger">
+                    <i class="fas fa-cloud-upload-alt"></i> Upload Profile Picture
+                </div>
+                <input type="file" id="profileUpload" accept="image/*" style="display: none;">
+            </div>
+            
+            <div class="form-group">
+                <label for="signupName">Full Name</label>
+                <input type="text" id="signupName" placeholder="Enter your full name">
+            </div>
+            <div class="form-group">
+                <label for="signupEmail">Email</label>
+                <input type="email" id="signupEmail" placeholder="Enter your email">
+            </div>
+            <div class="form-group">
+                <label for="signupPhone">Phone Number (Username)</label>
+                <input type="text" id="signupPhone" placeholder="Enter your phone number">
+            </div>
+            <div class="form-group">
+                <label for="signupPosition">Position/Level</label>
+                <input type="text" id="signupPosition" placeholder="Enter your position">
+            </div>
+            <div class="form-group">
+                <label for="signupPassword">Password</label>
+                <input type="password" id="signupPassword" placeholder="Create a password">
+            </div>
+            <div class="form-group">
+                <label for="signupConfirmPassword">Confirm Password</label>
+                <input type="password" id="signupConfirmPassword" placeholder="Confirm your password">
+            </div>
+            <button class="btn" id="signupBtn">Sign Up</button>
+            <div class="form-footer">
+                <a id="backToLogin">Back to Login</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forgot Password Page -->
+    <div class="forgot-password-page" id="forgotPasswordPage">
+        <div class="forgot-password-form">
+            <h2 class="form-title">Reset Password</h2>
+            <div class="form-group">
+                <label for="resetUsername">Phone Number (Username)</label>
+                <input type="text" id="resetUsername" placeholder="Enter your phone number">
+            </div>
+            <div class="form-group">
+                <label for="resetEmail">Email</label>
+                <input type="email" id="resetEmail" placeholder="Enter your email">
+            </div>
+            <div class="form-group">
+                <label for="newPassword">New Password</label>
+                <input type="password" id="newPassword" placeholder="Enter new password">
+            </div>
+            <button class="btn" id="resetPasswordBtn">Reset Password</button>
+            <div class="form-footer">
+                <a id="backToLoginFromReset">Back to Login</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Page -->
+    <div class="main-page" id="mainPage">
+        <!-- Menu Overlay -->
+        <div class="menu-overlay" id="menuOverlay"></div>
+        
+        <!-- Header -->
+        <header class="header">
+            <div class="header-logo">
+                <div class="splash-logo" id="headerLogo" style="width: 45px; height: 45px; font-size: 22px;">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <h1 id="headerTitle">DHPS Connect</h1>
+            </div>
+            <div class="profile-section">
+                <div class="profile-icon" id="profileIcon">
+                    <i class="fas fa-user" id="profileIconImage"></i>
+                </div>
+                <div class="profile-menu" id="profileMenu">
+                    <div class="profile-menu-header">
+                        <h3>User Profile</h3>
+                        <span class="close-menu" id="closeMenu"><i class="fas fa-times"></i></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="profileName">Name</label>
+                        <input type="text" id="profileName">
+                    </div>
+                    <div class="form-group">
+                        <label for="profileEmail">Email</label>
+                        <input type="email" id="profileEmail">
+                    </div>
+                    <div class="form-group">
+                        <label for="profilePhone">Phone</label>
+                        <input type="text" id="profilePhone">
+                    </div>
+                    <div class="form-group">
+                        <label for="profilePosition">Position</label>
+                        <input type="text" id="profilePosition">
+                    </div>
+                    <button class="btn" id="saveProfile">Save Changes</button>
+                    <div class="dark-mode-toggle">
+                        <span>Dark Mode</span>
+                        <div class="toggle-switch" id="darkModeToggle"></div>
+                    </div>
+                    <button class="btn btn-secondary" id="logoutBtn" style="margin-top: 15px;">Sign Out</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <div class="content">
+            <!-- User Slider -->
+            <section class="user-slider-section">
+                <h2 class="section-title">Team Members</h2>
+                <div class="user-slider" id="userSlider">
+                    <!-- User cards will be dynamically added here -->
+                </div>
+            </section>
+
+            <!-- Services Grid -->
+            <section class="services-section">
+                <h2 class="section-title">Services</h2>
+                <div class="services-grid" id="servicesGrid">
+                    <!-- Service cards will be dynamically added here -->
+                </div>
+            </section>
+
+            <!-- Generation Report -->
+            <section class="generation-report-section">
+                <h2 class="section-title">Generation Reports</h2>
+                <div class="report-actions">
+                    <button class="btn" id="viewAllReports">View All Reports</button>
+                    <button class="btn" id="createNewReport">Create New Report</button>
+                </div>
+                <div class="report-list" id="reportList">
+                    <!-- Report items will be dynamically added here -->
+                </div>
+            </section>
+
+            <!-- Photo Slider -->
+            <section class="photo-slider-section">
+                <h2 class="section-title">Gallery</h2>
+                <div class="photo-slider">
+                    <div class="slider-container" id="sliderContainer">
+                        <!-- Slides will be dynamically added here -->
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Designed and developed by: Devighat Powerhouse | <span id="currentDateTime"></span></p>
+        </footer>
+    </div>
+
+    <!-- Super Admin Page -->
+    <div class="super-admin-page" id="superAdminPage">
+        <!-- Menu Overlay -->
+        <div class="menu-overlay" id="adminMenuOverlay"></div>
+        
+        <header class="header">
+            <div class="header-logo">
+                <div class="splash-logo" id="adminHeaderLogo" style="width: 45px; height: 45px; font-size: 22px;">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <h1 id="adminHeaderTitle">Super Admin Dashboard</h1>
+            </div>
+            <div class="profile-section">
+                <div class="profile-icon" id="adminProfileIcon">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <div class="profile-menu" id="adminProfileMenu">
+                    <div class="profile-menu-header">
+                        <h3>Admin Profile</h3>
+                        <span class="close-menu" id="closeAdminMenu"><i class="fas fa-times"></i></span>
+                    </div>
+                    
+                    <div class="profile-upload">
+                        <div class="profile-preview" id="adminProfilePreview">
+                            <i class="fas fa-user-shield"></i>
+                        </div>
+                        <div class="upload-btn" id="adminUploadTrigger">
+                            <i class="fas fa-cloud-upload-alt"></i> Upload Profile Picture
+                        </div>
+                        <input type="file" id="adminProfileUpload" accept="image/*" style="display: none;">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="adminProfileName">Name</label>
+                        <input type="text" id="adminProfileName" value="Super Admin">
+                    </div>
+                    <div class="form-group">
+                        <label for="adminProfileEmail">Email</label>
+                        <input type="email" id="adminProfileEmail" value="admin@dhpsconnect.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="adminProfilePhone">Phone</label>
+                        <input type="text" id="adminProfilePhone" value="1111111111">
+                    </div>
+                    <div class="form-group">
+                        <label for="adminProfilePassword">Password</label>
+                        <input type="password" id="adminProfilePassword" placeholder="Leave blank to keep current">
+                    </div>
+                    <div class="dark-mode-toggle">
+                        <span>Dark Mode</span>
+                        <div class="toggle-switch" id="adminDarkModeToggle"></div>
+                    </div>
+                    <button class="btn" id="adminSaveProfile">Save Changes</button>
+                    <button class="btn btn-secondary" id="adminLogoutBtn" style="margin-top: 15px;">Sign Out</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="admin-dashboard">
+            <div class="admin-card" id="totalUsersCard">
+                <h3>Total Connected Users</h3>
+                <p>Manage all user accounts</p>
+                <div class="count" id="totalUsersCount">0</div>
+            </div>
+            <div class="admin-card" id="approvalRequestsCard">
+                <h3>Approval Requests</h3>
+                <p>Review and approve new users</p>
+                <div class="count" id="approvalRequestsCount">0</div>
+            </div>
+            <div class="admin-card" id="blockedAccountsCard">
+                <h3>Blocked Accounts</h3>
+                <p>Manage blocked user accounts</p>
+                <div class="count" id="blockedAccountsCount">0</div>
+            </div>
+            <div class="admin-card" id="generationReportsCard">
+                <h3>Generation Reports</h3>
+                <p>View and manage all reports</p>
+                <div class="count" id="generationReportsCount">0</div>
+            </div>
+            <div class="admin-card" id="webpageControlCard">
+                <h3>Webpage Control</h3>
+                <p>Customize website settings</p>
+                <div class="count"><i class="fas fa-cog"></i></div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <p>Designed by: Super Admin | <span id="adminCurrentDateTime"></span></p>
+        </footer>
+    </div>
+
+    <!-- Alert -->
+    <div class="alert" id="alert"></div>
+
+    <!-- Iframe Container -->
+    <div class="iframe-container" id="iframeContainer">
+        <div class="iframe-header">
+            <h3 id="iframeTitle">Service</h3>
+            <span id="closeIframe"><i class="fas fa-arrow-left"></i> Back</span>
+        </div>
+        <div class="iframe-content">
+            <iframe id="serviceFrame" src=""></iframe>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal" id="userDetailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>User Details</h3>
+                <span class="modal-close" id="closeUserModal"><i class="fas fa-times"></i></span>
+            </div>
+            <div class="modal-body" id="userDetailContent">
+                <!-- User details will be dynamically added here -->
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="reportModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="reportModalTitle">Generation Reports</h3>
+                <span class="modal-close" id="closeReportModal"><i class="fas fa-times"></i></span>
+            </div>
+            <div class="modal-body" id="reportModalContent">
+                <!-- Report content will be dynamically added here -->
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="newReportModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="newReportModalTitle">Create New Generation Report</h3>
+                <span class="modal-close" id="closeNewReportModal"><i class="fas fa-times"></i></span>
+            </div>
+            <div class="modal-body" id="newReportModalContent">
+                <!-- New report form will be dynamically added here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Application State
+        const state = {
+            currentUser: null,
+            isDarkMode: localStorage.getItem('darkMode') === 'true',
+            users: JSON.parse(localStorage.getItem('users')) || [],
+            currentPage: 'splash',
+            generationReports: JSON.parse(localStorage.getItem('generationReports')) || [],
+            sliderImages: JSON.parse(localStorage.getItem('sliderImages')) || [
+                { url: 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80', slogan: 'Providing reliable energy for Nepal' },
+                { url: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80', slogan: 'Committed to sustainable power generation' },
+                { url: 'https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80', slogan: 'Our team works tirelessly to keep the lights on' },
+                { url: 'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80', slogan: 'Embracing new technologies for better efficiency' },
+                { url: 'https://images.unsplash.com/photo-1564059813745-5b2d0adc3266?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80', slogan: 'Serving the people of Nepal with pride' }
+            ],
+            services: [
+                { name: 'Apple', icon: 'fas fa-apple-whole' },
+                { name: 'Bus', icon: 'fas fa-bus' },
+                { name: 'Car', icon: 'fas fa-car' },
+                { name: 'Dog', icon: 'fas fa-dog' },
+                { name: 'Elephant', icon: 'fas fa-elephant' },
+                { name: 'Flag', icon: 'fas fa-flag' },
+                { name: 'Gear', icon: 'fas fa-gear' },
+                { name: 'House', icon: 'fas fa-house' },
+                { name: 'Ice Cream', icon: 'fas fa-ice-cream' },
+                { name: 'Jet', icon: 'fas fa-jet-fighter' },
+                { name: 'Key', icon: 'fas fa-key' },
+                { name: 'Leaf', icon: 'fas fa-leaf' }
+            ],
+            appSettings: JSON.parse(localStorage.getItem('appSettings')) || {
+                appTitle: 'DHPS Connect',
+                appLogo: null
+            }
+        };
+
+        // DOM Elements
+        const elements = {
+            // Pages
+            splashScreen: document.getElementById('splashScreen'),
+            loginPage: document.getElementById('loginPage'),
+            signupPage: document.getElementById('signupPage'),
+            forgotPasswordPage: document.getElementById('forgotPasswordPage'),
+            mainPage: document.getElementById('mainPage'),
+            superAdminPage: document.getElementById('superAdminPage'),
+            
+            // App title and logo elements
+            appTitle: document.getElementById('appTitle'),
+            appLogo: document.getElementById('appLogo'),
+            headerTitle: document.getElementById('headerTitle'),
+            headerLogo: document.getElementById('headerLogo'),
+            adminHeaderTitle: document.getElementById('adminHeaderTitle'),
+            adminHeaderLogo: document.getElementById('adminHeaderLogo'),
+            
+            // Loading bar
+            loadingProgress: document.getElementById('loadingProgress'),
+            
+            // Menu overlays
+            menuOverlay: document.getElementById('menuOverlay'),
+            adminMenuOverlay: document.getElementById('adminMenuOverlay'),
+            
+            // Login elements
+            username: document.getElementById('username'),
+            password: document.getElementById('password'),
+            togglePassword: document.getElementById('togglePassword'),
+            loginBtn: document.getElementById('loginBtn'),
+            forgotPasswordLink: document.getElementById('forgotPasswordLink'),
+            signupLink: document.getElementById('signupLink'),
+            
+            // Signup elements
+            profilePreview: document.getElementById('profilePreview'),
+            uploadTrigger: document.getElementById('uploadTrigger'),
+            profileUpload: document.getElementById('profileUpload'),
+            signupName: document.getElementById('signupName'),
+            signupEmail: document.getElementById('signupEmail'),
+            signupPhone: document.getElementById('signupPhone'),
+            signupPosition: document.getElementById('signupPosition'),
+            signupPassword: document.getElementById('signupPassword'),
+            signupConfirmPassword: document.getElementById('signupConfirmPassword'),
+            signupBtn: document.getElementById('signupBtn'),
+            backToLogin: document.getElementById('backToLogin'),
+            
+            // Forgot password elements
+            resetUsername: document.getElementById('resetUsername'),
+            resetEmail: document.getElementById('resetEmail'),
+            newPassword: document.getElementById('newPassword'),
+            resetPasswordBtn: document.getElementById('resetPasswordBtn'),
+            backToLoginFromReset: document.getElementById('backToLoginFromReset'),
+            
+            // Main page elements
+            profileIcon: document.getElementById('profileIcon'),
+            profileIconImage: document.getElementById('profileIconImage'),
+            profileMenu: document.getElementById('profileMenu'),
+            closeMenu: document.getElementById('closeMenu'),
+            profileName: document.getElementById('profileName'),
+            profileEmail: document.getElementById('profileEmail'),
+            profilePhone: document.getElementById('profilePhone'),
+            profilePosition: document.getElementById('profilePosition'),
+            saveProfile: document.getElementById('saveProfile'),
+            darkModeToggle: document.getElementById('darkModeToggle'),
+            logoutBtn: document.getElementById('logoutBtn'),
+            userSlider: document.getElementById('userSlider'),
+            servicesGrid: document.getElementById('servicesGrid'),
+            viewAllReports: document.getElementById('viewAllReports'),
+            createNewReport: document.getElementById('createNewReport'),
+            reportList: document.getElementById('reportList'),
+            sliderContainer: document.getElementById('sliderContainer'),
+            currentDateTime: document.getElementById('currentDateTime'),
+            
+            // Super admin elements
+            adminProfileIcon: document.getElementById('adminProfileIcon'),
+            adminProfileMenu: document.getElementById('adminProfileMenu'),
+            closeAdminMenu: document.getElementById('closeAdminMenu'),
+            adminDarkModeToggle: document.getElementById('adminDarkModeToggle'),
+            adminLogoutBtn: document.getElementById('adminLogoutBtn'),
+            adminProfilePreview: document.getElementById('adminProfilePreview'),
+            adminUploadTrigger: document.getElementById('adminUploadTrigger'),
+            adminProfileUpload: document.getElementById('adminProfileUpload'),
+            adminProfileName: document.getElementById('adminProfileName'),
+            adminProfileEmail: document.getElementById('adminProfileEmail'),
+            adminProfilePhone: document.getElementById('adminProfilePhone'),
+            adminProfilePassword: document.getElementById('adminProfilePassword'),
+            adminSaveProfile: document.getElementById('adminSaveProfile'),
+            totalUsersCard: document.getElementById('totalUsersCard'),
+            approvalRequestsCard: document.getElementById('approvalRequestsCard'),
+            blockedAccountsCard: document.getElementById('blockedAccountsCard'),
+            generationReportsCard: document.getElementById('generationReportsCard'),
+            webpageControlCard: document.getElementById('webpageControlCard'),
+            totalUsersCount: document.getElementById('totalUsersCount'),
+            approvalRequestsCount: document.getElementById('approvalRequestsCount'),
+            blockedAccountsCount: document.getElementById('blockedAccountsCount'),
+            generationReportsCount: document.getElementById('generationReportsCount'),
+            adminCurrentDateTime: document.getElementById('adminCurrentDateTime'),
+            
+            // Modals and alerts
+            alert: document.getElementById('alert'),
+            iframeContainer: document.getElementById('iframeContainer'),
+            iframeTitle: document.getElementById('iframeTitle'),
+            serviceFrame: document.getElementById('serviceFrame'),
+            closeIframe: document.getElementById('closeIframe'),
+            userDetailModal: document.getElementById('userDetailModal'),
+            closeUserModal: document.getElementById('closeUserModal'),
+            userDetailContent: document.getElementById('userDetailContent'),
+            reportModal: document.getElementById('reportModal'),
+            closeReportModal: document.getElementById('closeReportModal'),
+            reportModalTitle: document.getElementById('reportModalTitle'),
+            reportModalContent: document.getElementById('reportModalContent'),
+            newReportModal: document.getElementById('newReportModal'),
+            closeNewReportModal: document.getElementById('closeNewReportModal'),
+            newReportModalTitle: document.getElementById('newReportModalTitle'),
+            newReportModalContent: document.getElementById('newReportModalContent')
+        };
+
+        // Utility Functions
+        function showAlert(message, type = 'info') {
+            elements.alert.textContent = message;
+            elements.alert.className = `alert ${type}`;
+            elements.alert.style.display = 'block';
+            
+            setTimeout(() => {
+                elements.alert.style.display = 'none';
+            }, 4000);
+        }
+
+        function switchPage(page) {
+            // Hide all pages
+            elements.splashScreen.classList.add('hidden');
+            elements.loginPage.classList.remove('active');
+            elements.signupPage.classList.remove('active');
+            elements.forgotPasswordPage.classList.remove('active');
+            elements.mainPage.classList.remove('active');
+            elements.superAdminPage.classList.remove('active');
+            
+            // Show the requested page
+            switch(page) {
+                case 'splash':
+                    elements.splashScreen.classList.remove('hidden');
+                    break;
+                case 'login':
+                    elements.loginPage.classList.add('active');
+                    break;
+                case 'signup':
+                    elements.signupPage.classList.add('active');
+                    break;
+                case 'forgotPassword':
+                    elements.forgotPasswordPage.classList.add('active');
+                    break;
+                case 'main':
+                    elements.mainPage.classList.add('active');
+                    loadMainPage();
+                    break;
+                case 'superAdmin':
+                    elements.superAdminPage.classList.add('active');
+                    loadSuperAdminPage();
+                    break;
+            }
+            
+            state.currentPage = page;
+        }
+
+        function validateForm(formData, requiredFields) {
+            for (let field of requiredFields) {
+                if (!formData[field] || formData[field].trim() === '') {
+                    return { isValid: false, message: `Please fill in the ${field} field.` };
+                }
+            }
+            return { isValid: true };
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('users', JSON.stringify(state.users));
+            localStorage.setItem('generationReports', JSON.stringify(state.generationReports));
+            localStorage.setItem('sliderImages', JSON.stringify(state.sliderImages));
+            localStorage.setItem('darkMode', state.isDarkMode.toString());
+            localStorage.setItem('appSettings', JSON.stringify(state.appSettings));
+        }
+
+        function updateAppLogoAndTitle() {
+            // Update splash screen
+            if (state.appSettings.appLogo) {
+                elements.appLogo.innerHTML = `<img src="${state.appSettings.appLogo}" alt="App Logo" style="width:100%;height:100%;border-radius:25%;object-fit:cover;">`;
+            } else {
+                elements.appLogo.innerHTML = '<i class="fas fa-bolt"></i>';
+            }
+            
+            elements.appTitle.textContent = state.appSettings.appTitle;
+            
+            // Update header logos
+            if (state.appSettings.appLogo) {
+                elements.headerLogo.innerHTML = `<img src="${state.appSettings.appLogo}" alt="App Logo" style="width:100%;height:100%;border-radius:25%;object-fit:cover;">`;
+                elements.adminHeaderLogo.innerHTML = `<img src="${state.appSettings.appLogo}" alt="App Logo" style="width:100%;height:100%;border-radius:25%;object-fit:cover;">`;
+            } else {
+                elements.headerLogo.innerHTML = '<i class="fas fa-bolt"></i>';
+                elements.adminHeaderLogo.innerHTML = '<i class="fas fa-bolt"></i>';
+            }
+            
+            elements.headerTitle.textContent = state.appSettings.appTitle;
+            elements.adminHeaderTitle.textContent = 'Super Admin Dashboard';
+        }
+
+        // Profile Picture Handling
+        function handleProfileUpload(event, isAdmin = false) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imageDataUrl = e.target.result;
+                    if (isAdmin) {
+                        elements.adminProfilePreview.innerHTML = `<img src="${imageDataUrl}" alt="Profile Preview">`;
+                    } else {
+                        elements.profilePreview.innerHTML = `<img src="${imageDataUrl}" alt="Profile Preview">`;
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function updateProfileIcon() {
+            if (state.currentUser && state.currentUser.profile && state.currentUser.profile !== 'default') {
+                elements.profileIconImage.className = '';
+                elements.profileIcon.innerHTML = `<img src="${state.currentUser.profile}" alt="Profile" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+            } else {
+                elements.profileIcon.innerHTML = '<i class="fas fa-user"></i>';
+            }
+            
+            // Update admin profile icon
+            if (state.currentUser && state.currentUser.isAdmin) {
+                if (state.currentUser.profile && state.currentUser.profile !== 'default') {
+                    elements.adminProfileIcon.innerHTML = `<img src="${state.currentUser.profile}" alt="Profile" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+                } else {
+                    elements.adminProfileIcon.innerHTML = '<i class="fas fa-user-shield"></i>';
+                }
+            }
+        }
+
+        // Application Initialization
+        function init() {
+            // Set dark mode if enabled
+            if (state.isDarkMode) {
+                document.body.classList.add('dark-mode');
+                elements.darkModeToggle.classList.add('active');
+                elements.adminDarkModeToggle.classList.add('active');
+            }
+            
+            // Update app logo and title
+            updateAppLogoAndTitle();
+            
+            // Show splash screen first with loading animation
+            switchPage('splash');
+            elements.loadingProgress.style.width = '100%';
+            
+            // After 5 seconds, show login page
+            setTimeout(() => {
+                switchPage('login');
+            }, 5000);
+            
+            // Check if user is already logged in
+            const loggedInUser = localStorage.getItem('loggedInUser');
+            if (loggedInUser) {
+                state.currentUser = JSON.parse(loggedInUser);
+                if (state.currentUser.username === '1111111111' && state.currentUser.password === '98447278') {
+                    switchPage('superAdmin');
+                } else {
+                    switchPage('main');
+                }
+            }
+            
+            // Initialize event listeners
+            initEventListeners();
+            
+            // Update date time
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+        }
+
+        function initEventListeners() {
+            // Login page events
+            elements.togglePassword.addEventListener('click', togglePasswordVisibility);
+            elements.loginBtn.addEventListener('click', handleLogin);
+            elements.forgotPasswordLink.addEventListener('click', () => switchPage('forgotPassword'));
+            elements.signupLink.addEventListener('click', () => switchPage('signup'));
+            
+            // Signup page events
+            elements.uploadTrigger.addEventListener('click', () => elements.profileUpload.click());
+            elements.profileUpload.addEventListener('change', (e) => handleProfileUpload(e, false));
+            elements.signupBtn.addEventListener('click', handleSignup);
+            elements.backToLogin.addEventListener('click', () => switchPage('login'));
+            
+            // Forgot password events
+            elements.resetPasswordBtn.addEventListener('click', handlePasswordReset);
+            elements.backToLoginFromReset.addEventListener('click', () => switchPage('login'));
+            
+            // Main page events
+            elements.profileIcon.addEventListener('click', toggleProfileMenu);
+            elements.closeMenu.addEventListener('click', toggleProfileMenu);
+            elements.menuOverlay.addEventListener('click', toggleProfileMenu);
+            elements.saveProfile.addEventListener('click', saveProfile);
+            elements.darkModeToggle.addEventListener('click', toggleDarkMode);
+            elements.logoutBtn.addEventListener('click', handleLogout);
+            elements.viewAllReports.addEventListener('click', viewAllReports);
+            elements.createNewReport.addEventListener('click', createNewReport);
+            
+            // Super admin events
+            elements.adminProfileIcon.addEventListener('click', toggleAdminProfileMenu);
+            elements.closeAdminMenu.addEventListener('click', toggleAdminProfileMenu);
+            elements.adminMenuOverlay.addEventListener('click', toggleAdminProfileMenu);
+            elements.adminDarkModeToggle.addEventListener('click', toggleDarkMode);
+            elements.adminLogoutBtn.addEventListener('click', handleAdminLogout);
+            elements.adminUploadTrigger.addEventListener('click', () => elements.adminProfileUpload.click());
+            elements.adminProfileUpload.addEventListener('change', (e) => handleProfileUpload(e, true));
+            elements.adminSaveProfile.addEventListener('click', saveAdminProfile);
+            elements.totalUsersCard.addEventListener('click', showTotalUsers);
+            elements.approvalRequestsCard.addEventListener('click', showApprovalRequests);
+            elements.blockedAccountsCard.addEventListener('click', showBlockedAccounts);
+            elements.generationReportsCard.addEventListener('click', showGenerationReportsAdmin);
+            elements.webpageControlCard.addEventListener('click', showWebpageControl);
+            
+            // Modal events
+            elements.closeUserModal.addEventListener('click', () => elements.userDetailModal.classList.remove('active'));
+            elements.closeReportModal.addEventListener('click', () => elements.reportModal.classList.remove('active'));
+            elements.closeNewReportModal.addEventListener('click', () => elements.newReportModal.classList.remove('active'));
+            elements.closeIframe.addEventListener('click', () => elements.iframeContainer.classList.remove('active'));
+            
+            // Close modals when clicking outside
+            window.addEventListener('click', (e) => {
+                if (e.target === elements.userDetailModal) {
+                    elements.userDetailModal.classList.remove('active');
+                }
+                if (e.target === elements.reportModal) {
+                    elements.reportModal.classList.remove('active');
+                }
+                if (e.target === elements.newReportModal) {
+                    elements.newReportModal.classList.remove('active');
+                }
+            });
+            
+            // Prevent zoom on double-tap for mobile
+            let lastTouchEnd = 0;
+            document.addEventListener('touchend', function (event) {
+                const now = (new Date()).getTime();
+                if (now - lastTouchEnd <= 300) {
+                    event.preventDefault();
+                }
+                lastTouchEnd = now;
+            }, false);
+        }
+
+        // Login Functions
+        function togglePasswordVisibility() {
+            const passwordField = elements.password;
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                elements.togglePassword.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                passwordField.type = 'password';
+                elements.togglePassword.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        }
+
+        function handleLogin() {
+            const username = elements.username.value.trim();
+            const password = elements.password.value.trim();
+            
+            if (!username || !password) {
+                showAlert('Please enter both username and password.', 'info');
+                return;
+            }
+            
+            // Check for super admin login
+            if (username === '1111111111' && password === '98447278') {
+                state.currentUser = { 
+                    username, 
+                    password, 
+                    name: 'Super Admin', 
+                    email: 'admin@dhpsconnect.com',
+                    phone: '1111111111',
+                    position: 'Administrator',
+                    isAdmin: true,
+                    profile: 'default'
+                };
+                localStorage.setItem('loggedInUser', JSON.stringify(state.currentUser));
+                
+                // Show welcome message
+                showAlert('Welcome, Super Admin!', 'success');
+                setTimeout(() => {
+                    switchPage('superAdmin');
+                }, 1000);
+                return;
+            }
+            
+            // Check for regular user login
+            const user = state.users.find(u => u.phone === username && u.password === password);
+            
+            if (!user) {
+                showAlert('Wrong username or password.', 'info');
+                return;
+            }
+            
+            if (!user.approved) {
+                showAlert('Your account is pending approval by the administrator.', 'info');
+                return;
+            }
+            
+            state.currentUser = user;
+            localStorage.setItem('loggedInUser', JSON.stringify(state.currentUser));
+            
+            // Show welcome message
+            showAlert(`Hello ${user.name}! Welcome to DHPS Connect`, 'success');
+            
+            // Show welcome splash for 3 seconds
+            elements.splashScreen.classList.remove('hidden');
+            elements.splashScreen.querySelector('h1').textContent = `Hello ${user.name}!`;
+            elements.splashScreen.querySelector('p').textContent = 'Welcome to DHPS Connect';
+            setTimeout(() => {
+                elements.splashScreen.classList.add('hidden');
+                switchPage('main');
+            }, 3000);
+        }
+
+        // Signup Functions
+        function handleSignup() {
+            const profile = elements.profilePreview.querySelector('img') ? elements.profilePreview.querySelector('img').src : 'default';
+            const name = elements.signupName.value.trim();
+            const email = elements.signupEmail.value.trim();
+            const phone = elements.signupPhone.value.trim();
+            const position = elements.signupPosition.value.trim();
+            const password = elements.signupPassword.value;
+            const confirmPassword = elements.signupConfirmPassword.value;
+            
+            const validation = validateForm(
+                { name, email, phone, position, password, confirmPassword },
+                ['name', 'email', 'phone', 'position', 'password']
+            );
+            
+            if (!validation.isValid) {
+                showAlert(validation.message, 'info');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                showAlert('Passwords do not match.', 'info');
+                return;
+            }
+            
+            // Check if user already exists
+            if (state.users.find(u => u.phone === phone)) {
+                showAlert('A user with this phone number already exists.', 'info');
+                return;
+            }
+            
+            // Add new user (pending approval)
+            const newUser = {
+                id: Date.now(),
+                profile: profile,
+                name,
+                email,
+                phone,
+                position,
+                password,
+                approved: false,
+                isAdmin: false,
+                blocked: false
+            };
+            
+            state.users.push(newUser);
+            saveToLocalStorage();
+            
+            showAlert('Registration successful! Your account is pending approval.', 'success');
+            setTimeout(() => {
+                switchPage('login');
+            }, 2000);
+        }
+
+        // Password Reset Functions
+        function handlePasswordReset() {
+            const username = elements.resetUsername.value.trim();
+            const email = elements.resetEmail.value.trim();
+            const newPassword = elements.newPassword.value;
+            
+            if (!username || !email || !newPassword) {
+                showAlert('Please fill in all fields.', 'info');
+                return;
+            }
+            
+            const user = state.users.find(u => u.phone === username && u.email === email);
+            
+            if (!user) {
+                showAlert('No user found with the provided information.', 'info');
+                return;
+            }
+            
+            user.password = newPassword;
+            saveToLocalStorage();
+            
+            showAlert('Password reset successfully!', 'success');
+            setTimeout(() => {
+                switchPage('login');
+            }, 2000);
+        }
+
+        // Main Page Functions
+        function toggleProfileMenu() {
+            if (state.currentUser) {
+                elements.profileName.value = state.currentUser.name || '';
+                elements.profileEmail.value = state.currentUser.email || '';
+                elements.profilePhone.value = state.currentUser.phone || '';
+                elements.profilePosition.value = state.currentUser.position || '';
+            }
+            
+            elements.profileMenu.classList.toggle('active');
+            elements.menuOverlay.classList.toggle('active');
+        }
+
+        function toggleAdminProfileMenu() {
+            if (state.currentUser && state.currentUser.isAdmin) {
+                elements.adminProfileName.value = state.currentUser.name || '';
+                elements.adminProfileEmail.value = state.currentUser.email || '';
+                elements.adminProfilePhone.value = state.currentUser.phone || '';
+                
+                // Update profile preview if exists
+                if (state.currentUser.profile && state.currentUser.profile !== 'default') {
+                    elements.adminProfilePreview.innerHTML = `<img src="${state.currentUser.profile}" alt="Profile Preview">`;
+                }
+            }
+            
+            elements.adminProfileMenu.classList.toggle('active');
+            elements.adminMenuOverlay.classList.toggle('active');
+        }
+
+        function saveProfile() {
+            const name = elements.profileName.value.trim();
+            const email = elements.profileEmail.value.trim();
+            const phone = elements.profilePhone.value.trim();
+            const position = elements.profilePosition.value.trim();
+            
+            if (!name || !email || !phone || !position) {
+                showAlert('Please fill in all fields.', 'info');
+                return;
+            }
+            
+            // Update current user
+            state.currentUser.name = name;
+            state.currentUser.email = email;
+            state.currentUser.phone = phone;
+            state.currentUser.position = position;
+            
+            // Update in users array
+            const userIndex = state.users.findIndex(u => u.id === state.currentUser.id);
+            if (userIndex !== -1) {
+                state.users[userIndex] = state.currentUser;
+            }
+            
+            saveToLocalStorage();
+            localStorage.setItem('loggedInUser', JSON.stringify(state.currentUser));
+            
+            showAlert('Profile updated successfully!', 'success');
+            toggleProfileMenu();
+            loadMainPage(); // Refresh the page to show updated info
+        }
+
+        function saveAdminProfile() {
+            const name = elements.adminProfileName.value.trim();
+            const email = elements.adminProfileEmail.value.trim();
+            const phone = elements.adminProfilePhone.value.trim();
+            const password = elements.adminProfilePassword.value;
+            
+            if (!name || !email || !phone) {
+                showAlert('Please fill in all required fields.', 'info');
+                return;
+            }
+            
+            // Update current user (super admin)
+            state.currentUser.name = name;
+            state.currentUser.email = email;
+            state.currentUser.phone = phone;
+            
+            // Update profile picture if uploaded
+            const profileImg = elements.adminProfilePreview.querySelector('img');
+            if (profileImg) {
+                state.currentUser.profile = profileImg.src;
+            }
+            
+            // Update password if provided
+            if (password) {
+                state.currentUser.password = password;
+            }
+            
+            // Save to localStorage
+            localStorage.setItem('loggedInUser', JSON.stringify(state.currentUser));
+            
+            showAlert('Admin profile updated successfully!', 'success');
+            toggleAdminProfileMenu();
+            updateProfileIcon(); // Update profile icon
+        }
+
+        function toggleDarkMode() {
+            state.isDarkMode = !state.isDarkMode;
+            document.body.classList.toggle('dark-mode', state.isDarkMode);
+            elements.darkModeToggle.classList.toggle('active', state.isDarkMode);
+            elements.adminDarkModeToggle.classList.toggle('active', state.isDarkMode);
+            saveToLocalStorage();
+        }
+
+        function handleLogout() {
+            if (confirm('Are you sure you want to sign out?')) {
+                localStorage.removeItem('loggedInUser');
+                state.currentUser = null;
+                switchPage('login');
+            }
+        }
+
+        function handleAdminLogout() {
+            if (confirm('Are you sure you want to sign out?')) {
+                localStorage.removeItem('loggedInUser');
+                state.currentUser = null;
+                switchPage('login');
+            }
+        }
+
+        function loadMainPage() {
+            // Update profile icon
+            updateProfileIcon();
+            
+            // Load user slider
+            loadUserSlider();
+            
+            // Load services grid
+            loadServicesGrid();
+            
+            // Load generation reports
+            loadGenerationReports();
+            
+            // Load photo slider
+            loadPhotoSlider();
+        }
+
+        function loadUserSlider() {
+            elements.userSlider.innerHTML = '';
+            
+            // Only show approved users
+            const approvedUsers = state.users.filter(u => u.approved && !u.blocked);
+            
+            if (approvedUsers.length === 0) {
+                elements.userSlider.innerHTML = '<p style="text-align:center; padding:20px; color:#777;">No team members available.</p>';
+                return;
+            }
+            
+            approvedUsers.forEach(user => {
+                const userCard = document.createElement('div');
+                userCard.className = 'user-card';
+                userCard.innerHTML = `
+                    <div class="user-avatar">
+                        ${user.profile && user.profile !== 'default' 
+                            ? `<img src="${user.profile}" alt="${user.name}">` 
+                            : `<i class="fas fa-user"></i>`}
+                    </div>
+                    <h3>${user.name}</h3>
+                    <p>${user.position}</p>
+                `;
+                userCard.addEventListener('click', () => showUserDetails(user));
+                elements.userSlider.appendChild(userCard);
+            });
+        }
+
+        function showUserDetails(user) {
+            elements.userDetailContent.innerHTML = `
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div class="user-avatar" style="width: 120px; height: 120px; margin: 0 auto 15px;">
+                        ${user.profile && user.profile !== 'default' 
+                            ? `<img src="${user.profile}" alt="${user.name}">` 
+                            : `<i class="fas fa-user" style="font-size: 4rem;"></i>`}
+                    </div>
+                    <h3>${user.name}</h3>
+                    <p>${user.position}</p>
+                </div>
+                <div class="form-group">
+                    <label><strong>Email:</strong> ${user.email}</label>
+                </div>
+                <div class="form-group">
+                    <label><strong>Phone:</strong> ${user.phone}</label>
+                </div>
+                <div class="form-group">
+                    <label><strong>Position:</strong> ${user.position}</label>
+                </div>
+            `;
+            elements.userDetailModal.classList.add('active');
+        }
+
+        function loadServicesGrid() {
+            elements.servicesGrid.innerHTML = '';
+            
+            state.services.forEach(service => {
+                const serviceCard = document.createElement('div');
+                serviceCard.className = 'service-card';
+                serviceCard.innerHTML = `
+                    <div class="service-icon">
+                        <i class="${service.icon}"></i>
+                    </div>
+                    <h3>${service.name}</h3>
+                `;
+                serviceCard.addEventListener('click', () => openService(service));
+                elements.servicesGrid.appendChild(serviceCard);
+            });
+        }
+
+        function openService(service) {
+            elements.iframeTitle.textContent = service.name;
+            // Using a placeholder service - in a real app this would be your actual service URLs
+            elements.serviceFrame.src = `https://www.example.com/${service.name.toLowerCase()}`;
+            elements.iframeContainer.classList.add('active');
+        }
+
+        function loadGenerationReports() {
+            elements.reportList.innerHTML = '';
+            
+            // Show latest 10 reports
+            const recentReports = state.generationReports.slice(-10).reverse();
+            
+            if (recentReports.length === 0) {
+                elements.reportList.innerHTML = '<p style="text-align:center; padding:20px; color:#777;">No generation reports available.</p>';
+                return;
+            }
+            
+            recentReports.forEach(report => {
+                const reportItem = document.createElement('div');
+                reportItem.className = 'report-item';
+                
+                // Check if current user can edit/delete this report
+                const canEditDelete = state.currentUser && 
+                    (state.currentUser.isAdmin || state.currentUser.id === report.userId);
+                
+                reportItem.innerHTML = `
+                    <div class="report-info">
+                        <h3>${report.title}</h3>
+                        <p>Generated by: ${report.generatedBy} | Date: ${report.date}</p>
+                    </div>
+                    <div class="report-actions-item">
+                        <button class="action-btn primary preview-btn" data-id="${report.id}">Preview</button>
+                        <button class="action-btn primary download-btn" data-id="${report.id}">Download</button>
+                        ${canEditDelete 
+                            ? `<button class="action-btn edit-btn" data-id="${report.id}">Edit</button>
+                               <button class="action-btn delete-btn" data-id="${report.id}">Delete</button>` 
+                            : ''}
+                    </div>
+                `;
+                elements.reportList.appendChild(reportItem);
+            });
+            
+            // Add event listeners to buttons
+            document.querySelectorAll('.preview-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const reportId = e.target.getAttribute('data-id');
+                    previewReport(reportId);
+                });
+            });
+            
+            document.querySelectorAll('.download-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const reportId = e.target.getAttribute('data-id');
+                    downloadReport(reportId);
+                });
+            });
+            
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const reportId = e.target.getAttribute('data-id');
+                    editReport(reportId);
+                });
+            });
+            
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const reportId = e.target.getAttribute('data-id');
+                    deleteReport(reportId);
+                });
+            });
+        }
+
+        function viewAllReports() {
+            elements.reportModalTitle.textContent = 'All Generation Reports';
+            elements.reportModalContent.innerHTML = '';
+            
+            if (state.generationReports.length === 0) {
+                elements.reportModalContent.innerHTML = '<p style="text-align:center; padding:20px; color:#777;">No generation reports available.</p>';
+            } else {
+                // Show up to 60 reports
+                const reportsToShow = state.generationReports.slice(-60).reverse();
+                
+                reportsToShow.forEach(report => {
+                    // Check if current user can edit/delete this report
+                    const canEditDelete = state.currentUser && 
+                        (state.currentUser.isAdmin || state.currentUser.id === report.userId);
+                    
+                    const reportElement = document.createElement('div');
+                    reportElement.className = 'report-item';
+                    reportElement.style.marginBottom = '15px';
+                    reportElement.innerHTML = `
+                        <div class="report-info">
+                            <h3>${report.title}</h3>
+                            <p>Generated by: ${report.generatedBy} | Date: ${report.date}</p>
+                        </div>
+                        <div class="report-actions-item">
+                            <button class="action-btn primary preview-btn" data-id="${report.id}">Preview</button>
+                            <button class="action-btn primary download-btn" data-id="${report.id}">Download</button>
+                            ${canEditDelete 
+                                ? `<button class="action-btn edit-btn" data-id="${report.id}">Edit</button>
+                                   <button class="action-btn delete-btn" data-id="${report.id}">Delete</button>` 
+                                : ''}
+                        </div>
+                    `;
+                    elements.reportModalContent.appendChild(reportElement);
+                });
+                
+                // Add event listeners to buttons inside modal
+                elements.reportModalContent.querySelectorAll('.preview-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const reportId = e.target.getAttribute('data-id');
+                        previewReport(reportId);
+                        elements.reportModal.classList.remove('active');
+                    });
+                });
+                
+                elements.reportModalContent.querySelectorAll('.download-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const reportId = e.target.getAttribute('data-id');
+                        downloadReport(reportId);
+                    });
+                });
+                
+                elements.reportModalContent.querySelectorAll('.edit-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const reportId = e.target.getAttribute('data-id');
+                        editReport(reportId);
+                        elements.reportModal.classList.remove('active');
+                    });
+                });
+                
+                elements.reportModalContent.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const reportId = e.target.getAttribute('data-id');
+                        if (confirm('Are you sure you want to delete this report?')) {
+                            deleteReport(reportId);
+                            viewAllReports(); // Refresh the list
+                        }
+                    });
+                });
+            }
+            
+            elements.reportModal.classList.add('active');
+        }
+
+        function createNewReport() {
+            elements.newReportModalTitle.textContent = 'Create New Generation Report';
+            elements.newReportModalContent.innerHTML = `
+                <form id="newReportForm">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <div class="splash-logo" style="width: 60px; height: 60px; margin: 0 auto;">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <h3>Daily Generation Report</h3>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="reportDate">Date</label>
+                        <input type="date" id="reportDate" required>
+                    </div>
+                    
+                    <h4>Generation Data</h4>
+                    <div class="form-group">
+                        <label for="unit1">Unit No. 1 (MWH)</label>
+                        <input type="number" id="unit1" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="unit2">Unit No. 2 (MWH)</label>
+                        <input type="number" id="unit2" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="unit3">Unit No. 3 (MWH)</label>
+                        <input type="number" id="unit3" step="0.01" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="unitSentOut">Unit Sent Out (MWH)</label>
+                        <input type="number" id="unitSentOut" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="maxLoad">Maximum Load (MW)</label>
+                        <input type="number" id="maxLoad" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="minLoad">Minimum Load (MW)</label>
+                        <input type="number" id="minLoad" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="tdFeeder">T/D Feeder (MWH)</label>
+                        <input type="number" id="tdFeeder" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="genAtTPH">Gen at TPH (MWH)</label>
+                        <input type="number" id="genAtTPH" step="0.01" required>
+                    </div>
+                    
+                    <h4>Unit Events</h4>
+                    <p style="font-size: 0.9rem; color: #777; margin-bottom: 15px;">Add events for each unit (trip/run times). If no events are added, ideal hours will be 0 and run hours will be 72.</p>
+                    
+                    <div class="form-group">
+                        <label>Unit 1 Events</label>
+                        <div id="unit1Events" style="margin-bottom: 10px;">
+                            <!-- Events will be added here -->
+                        </div>
+                        <button type="button" class="action-btn" onclick="addEvent('unit1')">Add Event</button>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Unit 2 Events</label>
+                        <div id="unit2Events" style="margin-bottom: 10px;">
+                            <!-- Events will be added here -->
+                        </div>
+                        <button type="button" class="action-btn" onclick="addEvent('unit2')">Add Event</button>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Unit 3 Events</label>
+                        <div id="unit3Events" style="margin-bottom: 10px;">
+                            <!-- Events will be added here -->
+                        </div>
+                        <button type="button" class="action-btn" onclick="addEvent('unit3')">Add Event</button>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="stationConsumption">Station Consumption: UAT No 3 (kwh)</label>
+                        <input type="number" id="stationConsumption" step="0.01" required>
+                    </div>
+                    
+                    <button type="submit" class="btn">Generate Report</button>
+                </form>
+            `;
+            
+            // Set today's date as default
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('reportDate').value = today;
+            
+            // Add initial event for each unit
+            addEvent('unit1');
+            addEvent('unit2');
+            addEvent('unit3');
+            
+            document.getElementById('newReportForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                generateNewReport();
+            });
+            
+            elements.newReportModal.classList.add('active');
+        }
+
+        // Global function to add events (accessible from HTML)
+        window.addEvent = function(unit) {
+            const eventsContainer = document.getElementById(`${unit}Events`);
+            const eventIndex = eventsContainer.children.length;
+            
+            const eventDiv = document.createElement('div');
+            eventDiv.className = 'event-row';
+            eventDiv.style.display = 'grid';
+            eventDiv.style.gridTemplateColumns = '1fr 1fr auto';
+            eventDiv.style.gap = '10px';
+            eventDiv.style.marginBottom = '10px';
+            eventDiv.style.alignItems = 'center';
+            
+            eventDiv.innerHTML = `
+                <input type="time" placeholder="Trip Time" id="${unit}Trip${eventIndex}">
+                <input type="time" placeholder="Run Time" id="${unit}Run${eventIndex}">
+                <button type="button" class="action-btn" onclick="this.parentElement.remove()">Remove</button>
+            `;
+            
+            eventsContainer.appendChild(eventDiv);
+        };
+
+        function generateNewReport() {
+            const date = document.getElementById('reportDate').value;
+            const unit1 = parseFloat(document.getElementById('unit1').value) || 0;
+            const unit2 = parseFloat(document.getElementById('unit2').value) || 0;
+            const unit3 = parseFloat(document.getElementById('unit3').value) || 0;
+            const unitSentOut = parseFloat(document.getElementById('unitSentOut').value) || 0;
+            const maxLoad = parseFloat(document.getElementById('maxLoad').value) || 0;
+            const minLoad = parseFloat(document.getElementById('minLoad').value) || 0;
+            const tdFeeder = parseFloat(document.getElementById('tdFeeder').value) || 0;
+            const genAtTPH = parseFloat(document.getElementById('genAtTPH').value) || 0;
+            const stationConsumption = parseFloat(document.getElementById('stationConsumption').value) || 0;
+            
+            // Calculate values
+            const total = unit1 + unit2 + unit3;
+            const averageLoad = total / 24;
+            const generationPercentage = genAtTPH > 0 ? (total / genAtTPH) * 100 : 0;
+            
+            // Calculate ideal hours based on events
+            let idealHour1 = 0, idealHour2 = 0, idealHour3 = 0;
+            
+            // Calculate for Unit 1
+            const unit1Events = document.getElementById('unit1Events').children;
+            if (unit1Events.length > 0) {
+                // Simplified calculation - in a real app, you'd calculate based on time differences
+                idealHour1 = unit1Events.length * 2; // Example calculation
+            }
+            
+            // Calculate for Unit 2
+            const unit2Events = document.getElementById('unit2Events').children;
+            if (unit2Events.length > 0) {
+                idealHour2 = unit2Events.length * 2; // Example calculation
+            }
+            
+            // Calculate for Unit 3
+            const unit3Events = document.getElementById('unit3Events').children;
+            if (unit3Events.length > 0) {
+                idealHour3 = unit3Events.length * 2; // Example calculation
+            }
+            
+            const totalIdealHour = idealHour1 + idealHour2 + idealHour3;
+            const totalRunHour = 72 - totalIdealHour;
+            
+            // Create report object
+            const newReport = {
+                id: Date.now(),
+                title: `Daily Generation Report ${date} by ${state.currentUser.name}`,
+                date: new Date().toLocaleDateString(),
+                generatedBy: state.currentUser.name,
+                userId: state.currentUser.id,
+                data: {
+                    date,
+                    unit1, unit2, unit3,
+                    total,
+                    unitSentOut,
+                    maxLoad, minLoad,
+                    averageLoad,
+                    tdFeeder,
+                    genAtTPH,
+                    generationPercentage,
+                    idealHour1, idealHour2, idealHour3,
+                    totalIdealHour, totalRunHour,
+                    stationConsumption
+                }
+            };
+            
+            state.generationReports.push(newReport);
+            saveToLocalStorage();
+            
+            showAlert('Report generated successfully!', 'success');
+            elements.newReportModal.classList.remove('active');
+            loadGenerationReports(); // Refresh the reports list
+        }
+
+        function editReport(reportId) {
+            const report = state.generationReports.find(r => r.id == reportId);
+            if (!report) return;
+            
+            elements.newReportModalTitle.textContent = 'Edit Generation Report';
+            elements.newReportModalContent.innerHTML = `
+                <form id="editReportForm">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <div class="splash-logo" style="width: 60px; height: 60px; margin: 0 auto;">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <h3>Edit Daily Generation Report</h3>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editReportDate">Date</label>
+                        <input type="date" id="editReportDate" value="${report.data.date}" required>
+                    </div>
+                    
+                    <h4>Generation Data</h4>
+                    <div class="form-group">
+                        <label for="editUnit1">Unit No. 1 (MWH)</label>
+                        <input type="number" id="editUnit1" value="${report.data.unit1}" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editUnit2">Unit No. 2 (MWH)</label>
+                        <input type="number" id="editUnit2" value="${report.data.unit2}" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editUnit3">Unit No. 3 (MWH)</label>
+                        <input type="number" id="editUnit3" value="${report.data.unit3}" step="0.01" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editUnitSentOut">Unit Sent Out (MWH)</label>
+                        <input type="number" id="editUnitSentOut" value="${report.data.unitSentOut}" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editMaxLoad">Maximum Load (MW)</label>
+                        <input type="number" id="editMaxLoad" value="${report.data.maxLoad}" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editMinLoad">Minimum Load (MW)</label>
+                        <input type="number" id="editMinLoad" value="${report.data.minLoad}" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editTdFeeder">T/D Feeder (MWH)</label>
+                        <input type="number" id="editTdFeeder" value="${report.data.tdFeeder}" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editGenAtTPH">Gen at TPH (MWH)</label>
+                        <input type="number" id="editGenAtTPH" value="${report.data.genAtTPH}" step="0.01" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editStationConsumption">Station Consumption: UAT No 3 (kwh)</label>
+                        <input type="number" id="editStationConsumption" value="${report.data.stationConsumption}" step="0.01" required>
+                    </div>
+                    
+                    <button type="submit" class="btn">Update Report</button>
+                </form>
+            `;
+            
+            document.getElementById('editReportForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                updateReport(reportId);
+            });
+            
+            elements.newReportModal.classList.add('active');
+        }
+
+        function updateReport(reportId) {
+            const reportIndex = state.generationReports.findIndex(r => r.id == reportId);
+            if (reportIndex === -1) return;
+            
+            const date = document.getElementById('editReportDate').value;
+            const unit1 = parseFloat(document.getElementById('editUnit1').value) || 0;
+            const unit2 = parseFloat(document.getElementById('editUnit2').value) || 0;
+            const unit3 = parseFloat(document.getElementById('editUnit3').value) || 0;
+            const unitSentOut = parseFloat(document.getElementById('editUnitSentOut').value) || 0;
+            const maxLoad = parseFloat(document.getElementById('editMaxLoad').value) || 0;
+            const minLoad = parseFloat(document.getElementById('editMinLoad').value) || 0;
+            const tdFeeder = parseFloat(document.getElementById('editTdFeeder').value) || 0;
+            const genAtTPH = parseFloat(document.getElementById('editGenAtTPH').value) || 0;
+            const stationConsumption = parseFloat(document.getElementById('editStationConsumption').value) || 0;
+            
+            // Calculate values
+            const total = unit1 + unit2 + unit3;
+            const averageLoad = total / 24;
+            const generationPercentage = genAtTPH > 0 ? (total / genAtTPH) * 100 : 0;
+            
+            // Update report
+            state.generationReports[reportIndex].title = `Daily Generation Report ${date} by ${state.currentUser.name}`;
+            state.generationReports[reportIndex].data = {
+                date,
+                unit1, unit2, unit3,
+                total,
+                unitSentOut,
+                maxLoad, minLoad,
+                averageLoad,
+                tdFeeder,
+                genAtTPH,
+                generationPercentage,
+                idealHour1: state.generationReports[reportIndex].data.idealHour1,
+                idealHour2: state.generationReports[reportIndex].data.idealHour2,
+                idealHour3: state.generationReports[reportIndex].data.idealHour3,
+                totalIdealHour: state.generationReports[reportIndex].data.totalIdealHour,
+                totalRunHour: state.generationReports[reportIndex].data.totalRunHour,
+                stationConsumption
+            };
+            
+            saveToLocalStorage();
+            
+            showAlert('Report updated successfully!', 'success');
+            elements.newReportModal.classList.remove('active');
+            loadGenerationReports(); // Refresh the reports list
+        }
+
+        function previewReport(reportId) {
+            const report = state.generationReports.find(r => r.id == reportId);
+            if (!report) {
+                showAlert('Report not found!', 'info');
+                return;
+            }
+            
+            elements.reportModalTitle.textContent = report.title;
+            elements.reportModalContent.innerHTML = `
+                <div style="margin-bottom: 20px;">
+                    <h3>${report.title}</h3>
+                    <p><strong>Date:</strong> ${report.date}</p>
+                    <p><strong>Generated by:</strong> ${report.generatedBy}</p>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                    <div class="form-group">
+                        <label><strong>Unit 1:</strong> ${report.data.unit1} MWH</label>
+                    </div>
+                    <div class="form-group">
+                        <label><strong>Unit 2:</strong> ${report.data.unit2} MWH</label>
+                    </div>
+                    <div class="form-group">
+                        <label><strong>Unit 3:</strong> ${report.data.unit3} MWH</label>
+                    </div>
+                    <div class="form-group">
+                        <label><strong>Total:</strong> ${report.data.total} MWH</label>
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                    <div class="form-group">
+                        <label><strong>Unit Sent Out:</strong> ${report.data.unitSentOut} MWH</label>
+                    </div>
+                    <div class="form-group">
+                        <label><strong>Max Load:</strong> ${report.data.maxLoad} MW</label>
+                    </div>
+                    <div class="form-group">
+                        <label><strong>Min Load:</strong> ${report.data.minLoad} MW</label>
+                    </div>
+                    <div class="form-group">
+                        <label><strong>Avg Load:</strong> ${report.data.averageLoad.toFixed(2)} MWH</label>
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                    <div class="form-group">
+                        <label><strong>T/D Feeder:</strong> ${report.data.tdFeeder} MWH</label>
+                    </div>
+                    <div class="form-group">
+                        <label><strong>Gen at TPH:</strong> ${report.data.genAtTPH} MWH</label>
+                    </div>
+                    <div class="form-group">
+                        <label><strong>Generation %:</strong> ${report.data.generationPercentage.toFixed(2)}%</label>
+                    </div>
+                    <div class="form-group">
+                        <label><strong>Station Consumption:</strong> ${report.data.stationConsumption} kwh</label>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <h4>Running Hours</h4>
+                    <p><strong>Total Ideal Hours:</strong> ${report.data.totalIdealHour}</p>
+                    <p><strong>Total Run Hours:</strong> ${report.data.totalRunHour}</p>
+                </div>
+                
+                <button class="btn" onclick="downloadReport(${reportId})">Download PDF</button>
+            `;
+            
+            elements.reportModal.classList.add('active');
+        }
+
+        function downloadReport(reportId) {
+            const report = state.generationReports.find(r => r.id == reportId);
+            if (!report) return;
+            
+            // In a real application, this would generate an actual PDF
+            // For this demo, we'll just show a success message
+            showAlert(`Downloading report: ${report.title}`, 'success');
+        }
+
+        function deleteReport(reportId) {
+            state.generationReports = state.generationReports.filter(r => r.id != reportId);
+            saveToLocalStorage();
+            loadGenerationReports(); // Refresh the list
+            showAlert('Report deleted successfully!', 'success');
+        }
+
+        function loadPhotoSlider() {
+            elements.sliderContainer.innerHTML = '';
+            
+            state.sliderImages.forEach((image, index) => {
+                const slide = document.createElement('div');
+                slide.className = 'slide';
+                slide.style.backgroundImage = `url(${image.url})`;
+                slide.innerHTML = `
+                    <div class="slide-content">
+                        <p>${image.slogan}</p>
+                    </div>
+                `;
+                slide.addEventListener('click', () => {
+                    // In a real app, this would open the image in full screen
+                    alert(`Viewing image: ${image.slogan}`);
+                });
+                elements.sliderContainer.appendChild(slide);
+            });
+            
+            // Auto-slide functionality
+            let currentSlide = 0;
+            setInterval(() => {
+                currentSlide = (currentSlide + 1) % state.sliderImages.length;
+                elements.sliderContainer.style.transform = `translateX(-${currentSlide * 20}%)`;
+            }, 5000);
+        }
+
+        // Super Admin Functions
+        function loadSuperAdminPage() {
+            // Update counts
+            elements.totalUsersCount.textContent = state.users.length;
+            elements.approvalRequestsCount.textContent = state.users.filter(u => !u.approved).length;
+            elements.blockedAccountsCount.textContent = state.users.filter(u => u.blocked).length;
+            elements.generationReportsCount.textContent = state.generationReports.length;
+        }
+
+        function showTotalUsers() {
+            elements.reportModalTitle.textContent = 'Total Connected Users';
+            elements.reportModalContent.innerHTML = `
+                <p><strong>Total Users:</strong> ${state.users.length}</p>
+                <div style="max-height: 400px; overflow-y: auto;">
+                    ${state.users.map(user => `
+                        <div class="report-item" style="margin-bottom: 10px;">
+                            <div class="report-info">
+                                <h3>${user.name}</h3>
+                                <p>Phone: ${user.phone} | Email: ${user.email} | Position: ${user.position}</p>
+                                <p>Status: ${user.approved ? 'Approved' : 'Pending'} ${user.blocked ? '| Blocked' : ''}</p>
+                            </div>
+                            <div class="report-actions-item">
+                                <button class="action-btn primary edit-user-btn" data-id="${user.id}">Edit</button>
+                                <button class="action-btn ${user.blocked ? 'primary' : ''} ${user.blocked ? 'unblock' : 'block'}-btn" data-id="${user.id}">${user.blocked ? 'Unblock' : 'Block'}</button>
+                                <button class="action-btn delete-user-btn" data-id="${user.id}">Delete</button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            // Add event listeners
+            elements.reportModalContent.querySelectorAll('.edit-user-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const userId = e.target.getAttribute('data-id');
+                    editUser(userId);
+                });
+            });
+            
+            elements.reportModalContent.querySelectorAll('.block-btn, .unblock-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const userId = e.target.getAttribute('data-id');
+                    toggleUserBlock(userId);
+                    showTotalUsers(); // Refresh the list
+                });
+            });
+            
+            elements.reportModalContent.querySelectorAll('.delete-user-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const userId = e.target.getAttribute('data-id');
+                    if (confirm('Are you sure you want to delete this user?')) {
+                        deleteUser(userId);
+                        showTotalUsers(); // Refresh the list
+                    }
+                });
+            });
+            
+            elements.reportModal.classList.add('active');
+        }
+
+        function showApprovalRequests() {
+            const pendingUsers = state.users.filter(u => !u.approved);
+            
+            elements.reportModalTitle.textContent = 'Approval Requests';
+            elements.reportModalContent.innerHTML = `
+                <p><strong>Pending Requests:</strong> ${pendingUsers.length}</p>
+                <div style="max-height: 400px; overflow-y: auto;">
+                    ${pendingUsers.length === 0 
+                        ? '<p style="text-align:center; padding:20px; color:#777;">No pending approval requests.</p>' 
+                        : pendingUsers.map(user => `
+                            <div class="report-item" style="margin-bottom: 10px;">
+                                <div class="report-info">
+                                    <h3>${user.name}</h3>
+                                    <p>Phone: ${user.phone} | Email: ${user.email} | Position: ${user.position}</p>
+                                </div>
+                                <div class="report-actions-item">
+                                    <button class="action-btn primary approve-btn" data-id="${user.id}">Approve</button>
+                                    <button class="action-btn disapprove-btn" data-id="${user.id}">Disapprove</button>
+                                    <button class="action-btn primary preview-user-btn" data-id="${user.id}">Preview</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                </div>
+            `;
+            
+            // Add event listeners
+            elements.reportModalContent.querySelectorAll('.approve-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const userId = e.target.getAttribute('data-id');
+                    approveUser(userId, true);
+                    showApprovalRequests(); // Refresh the list
+                });
+            });
+            
+            elements.reportModalContent.querySelectorAll('.disapprove-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const userId = e.target.getAttribute('data-id');
+                    approveUser(userId, false);
+                    showApprovalRequests(); // Refresh the list
+                });
+            });
+            
+            elements.reportModalContent.querySelectorAll('.preview-user-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const userId = e.target.getAttribute('data-id');
+                    previewUser(userId);
+                });
+            });
+            
+            elements.reportModal.classList.add('active');
+        }
+
+        function showBlockedAccounts() {
+            const blockedUsers = state.users.filter(u => u.blocked);
+            
+            elements.reportModalTitle.textContent = 'Blocked Accounts';
+            elements.reportModalContent.innerHTML = `
+                <p><strong>Blocked Accounts:</strong> ${blockedUsers.length}</p>
+                <div style="max-height: 400px; overflow-y: auto;">
+                    ${blockedUsers.length === 0 
+                        ? '<p style="text-align:center; padding:20px; color:#777;">No blocked accounts.</p>' 
+                        : blockedUsers.map(user => `
+                            <div class="report-item" style="margin-bottom: 10px;">
+                                <div class="report-info">
+                                    <h3>${user.name}</h3>
+                                    <p>Phone: ${user.phone} | Email: ${user.email} | Position: ${user.position}</p>
+                                </div>
+                                <div class="report-actions-item">
+                                    <button class="action-btn primary unblock-btn" data-id="${user.id}">Unblock</button>
+                                    <button class="action-btn primary preview-user-btn" data-id="${user.id}">Preview</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                </div>
+            `;
+            
+            // Add event listeners
+            elements.reportModal.querySelectorAll('.unblock-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const userId = e.target.getAttribute('data-id');
+                    toggleUserBlock(userId);
+                    showBlockedAccounts(); // Refresh the list
+                });
+            });
+            
+            elements.reportModalContent.querySelectorAll('.preview-user-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const userId = e.target.getAttribute('data-id');
+                    previewUser(userId);
+                });
+            });
+            
+            elements.reportModal.classList.add('active');
+        }
+
+        function showGenerationReportsAdmin() {
+            elements.reportModalTitle.textContent = 'All Generation Reports (Admin)';
+            elements.reportModalContent.innerHTML = '';
+            
+            if (state.generationReports.length === 0) {
+                elements.reportModalContent.innerHTML = '<p style="text-align:center; padding:20px; color:#777;">No generation reports available.</p>';
+            } else {
+                // Show all reports
+                const reportsToShow = state.generationReports.slice().reverse();
+                
+                reportsToShow.forEach(report => {
+                    const reportElement = document.createElement('div');
+                    reportElement.className = 'report-item';
+                    reportElement.style.marginBottom = '15px';
+                    reportElement.innerHTML = `
+                        <div class="report-info">
+                            <h3>${report.title}</h3>
+                            <p>Generated by: ${report.generatedBy} | Date: ${report.date}</p>
+                        </div>
+                        <div class="report-actions-item">
+                            <button class="action-btn primary preview-btn" data-id="${report.id}">Preview</button>
+                            <button class="action-btn primary download-btn" data-id="${report.id}">Download</button>
+                            <button class="action-btn edit-btn" data-id="${report.id}">Edit</button>
+                            <button class="action-btn delete-btn" data-id="${report.id}">Delete</button>
+                        </div>
+                    `;
+                    elements.reportModalContent.appendChild(reportElement);
+                });
+                
+                // Add event listeners to buttons inside modal
+                elements.reportModalContent.querySelectorAll('.preview-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const reportId = e.target.getAttribute('data-id');
+                        previewReport(reportId);
+                    });
+                });
+                
+                elements.reportModalContent.querySelectorAll('.download-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const reportId = e.target.getAttribute('data-id');
+                        downloadReport(reportId);
+                    });
+                });
+                
+                elements.reportModalContent.querySelectorAll('.edit-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const reportId = e.target.getAttribute('data-id');
+                        editReport(reportId);
+                        elements.reportModal.classList.remove('active');
+                    });
+                });
+                
+                elements.reportModalContent.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const reportId = e.target.getAttribute('data-id');
+                        if (confirm('Are you sure you want to delete this report?')) {
+                            deleteReport(reportId);
+                            showGenerationReportsAdmin(); // Refresh the list
+                        }
+                    });
+                });
+            }
+            
+            elements.reportModal.classList.add('active');
+        }
+
+        function showWebpageControl() {
+            elements.reportModalTitle.textContent = 'Webpage Control';
+            elements.reportModalContent.innerHTML = `
+                <div class="form-group">
+                    <label for="websiteName">Website Name</label>
+                    <input type="text" id="websiteName" value="${state.appSettings.appTitle}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="websiteLogo">Website Logo URL</label>
+                    <input type="text" id="websiteLogo" value="${state.appSettings.appLogo || ''}" placeholder="Enter logo URL">
+                </div>
+                
+                <h4>Slider Images</h4>
+                <div id="sliderImagesList">
+                    ${state.sliderImages.map((image, index) => `
+                        <div class="form-group" style="border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; border-radius: 5px;">
+                            <label>Image ${index + 1}</label>
+                            <input type="text" class="slider-image-url" value="${image.url}" placeholder="Image URL" data-index="${index}">
+                            <input type="text" class="slider-image-slogan" value="${image.slogan}" placeholder="Slogan (max 50 chars)" data-index="${index}" maxlength="50">
+                            <button class="action-btn remove-slider-image" data-index="${index}" style="margin-top: 5px;">Remove</button>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <button class="btn" id="addSliderImage" style="margin-bottom: 15px;">Add Slider Image</button>
+                <button class="btn" id="saveWebpageSettings">Save Settings</button>
+            `;
+            
+            // Add event listeners
+            document.getElementById('addSliderImage').addEventListener('click', () => {
+                state.sliderImages.push({ url: '', slogan: '' });
+                showWebpageControl(); // Refresh the form
+            });
+            
+            document.querySelectorAll('.remove-slider-image').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const index = e.target.getAttribute('data-index');
+                    state.sliderImages.splice(index, 1);
+                    showWebpageControl(); // Refresh the form
+                });
+            });
+            
+            document.getElementById('saveWebpageSettings').addEventListener('click', saveWebpageSettings);
+            
+            elements.reportModal.classList.add('active');
+        }
+
+        function saveWebpageSettings() {
+            // In a real application, this would save the settings
+            // For this demo, we'll just show a success message
+            showAlert('Webpage settings saved successfully!', 'success');
+            elements.reportModal.classList.remove('active');
+        }
+
+        function editUser(userId) {
+            const user = state.users.find(u => u.id == userId);
+            if (!user) return;
+            
+            elements.reportModalTitle.textContent = `Edit User: ${user.name}`;
+            elements.reportModalContent.innerHTML = `
+                <div class="form-group">
+                    <label for="editUserName">Name</label>
+                    <input type="text" id="editUserName" value="${user.name}">
+                </div>
+                <div class="form-group">
+                    <label for="editUserEmail">Email</label>
+                    <input type="email" id="editUserEmail" value="${user.email}">
+                </div>
+                <div class="form-group">
+                    <label for="editUserPhone">Phone</label>
+                    <input type="text" id="editUserPhone" value="${user.phone}">
+                </div>
+                <div class="form-group">
+                    <label for="editUserPosition">Position</label>
+                    <input type="text" id="editUserPosition" value="${user.position}">
+                </div>
+                <div class="form-group">
+                    <label for="editUserPassword">Password</label>
+                    <input type="password" id="editUserPassword" placeholder="Leave blank to keep current">
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="editUserApproved" ${user.approved ? 'checked' : ''}>
+                        Approved
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="editUserBlocked" ${user.blocked ? 'checked' : ''}>
+                        Blocked
+                    </label>
+                </div>
+                <button class="btn" id="saveUserChanges">Save Changes</button>
+            `;
+            
+            document.getElementById('saveUserChanges').addEventListener('click', () => {
+                user.name = document.getElementById('editUserName').value;
+                user.email = document.getElementById('editUserEmail').value;
+                user.phone = document.getElementById('editUserPhone').value;
+                user.position = document.getElementById('editUserPosition').value;
+                user.approved = document.getElementById('editUserApproved').checked;
+                user.blocked = document.getElementById('editUserBlocked').checked;
+                
+                const newPassword = document.getElementById('editUserPassword').value;
+                if (newPassword) {
+                    user.password = newPassword;
+                }
+                
+                saveToLocalStorage();
+                showAlert('User updated successfully!', 'success');
+                elements.reportModal.classList.remove('active');
+            });
+        }
+
+        function approveUser(userId, approve) {
+            const user = state.users.find(u => u.id == userId);
+            if (!user) return;
+            
+            user.approved = approve;
+            saveToLocalStorage();
+            
+            showAlert(`User ${approve ? 'approved' : 'disapproved'} successfully!`, 'success');
+        }
+
+        function toggleUserBlock(userId) {
+            const user = state.users.find(u => u.id == userId);
+            if (!user) return;
+            
+            user.blocked = !user.blocked;
+            saveToLocalStorage();
+            
+            showAlert(`User ${user.blocked ? 'blocked' : 'unblocked'} successfully!`, 'success');
+        }
+
+        function deleteUser(userId) {
+            state.users = state.users.filter(u => u.id != userId);
+            saveToLocalStorage();
+            showAlert('User deleted successfully!', 'success');
+        }
+
+        function previewUser(userId) {
+            const user = state.users.find(u => u.id == userId);
+            if (!user) return;
+            
+            showUserDetails(user);
+        }
+
+        // Utility Functions
+        function updateDateTime() {
+            const now = new Date();
+            const dateTimeString = now.toLocaleString();
+            if (elements.currentDateTime) {
+                elements.currentDateTime.textContent = dateTimeString;
+            }
+            if (elements.adminCurrentDateTime) {
+                elements.adminCurrentDateTime.textContent = dateTimeString;
+            }
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
